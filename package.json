@@ -1,0 +1,30 @@
+{
+  "name": "atlas-secure-support",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Atlas Secure — Telegram support bot + operator dashboard",
+  "workspaces": [
+    "packages/server",
+    "packages/dashboard"
+  ],
+  "scripts": {
+    "postinstall": "prisma generate",
+    "build": "npm run build:dashboard && npm run build:server",
+    "build:server": "npm run build --workspace @atlas/server",
+    "build:dashboard": "npm run build --workspace @atlas/dashboard",
+    "start": "npm run start --workspace @atlas/server",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "dev:server": "npm run dev --workspace @atlas/server",
+    "dev:dashboard": "npm run dev --workspace @atlas/dashboard",
+    "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:dashboard\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "prisma": "^6.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

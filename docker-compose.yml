@@ -1,0 +1,15 @@
+# Local development only (Postgres). On Railway use the managed Postgres plugin.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas
+      POSTGRES_DB: atlas
+    ports:
+      - "5432:5432"
+    volumes:
+      - atlas_pg:/var/lib/postgresql/data
+
+volumes:
+  atlas_pg:

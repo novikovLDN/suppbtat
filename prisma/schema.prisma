@@ -1,0 +1,105 @@
+// Atlas Secure — support bot data model
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Dashboard user: an operator or admin who answers tickets.
+model Operator {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  role         Role     @default(OPERATOR)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  lastSeenAt   DateTime?
+
+  assignedTickets Ticket[]  @relation("AssignedOperator")
+  messages        Message[]
+
+  @@index([isActive])
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+/// A Telegram end user who writes to support.
+model Customer {
+  id           BigInt   @id // Telegram user id
+  username     String?
+  firstName    String?
+  lastName     String?
+  languageCode String?
+  createdAt    DateTime @default(now())
+
+  tickets Ticket[]
+
+  @@index([username])
+}
+
+/// A support conversation. Display number = id + NUMBER_OFFSET.
+model Ticket {
+  id         Int          @id @default(autoincrement())
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  customerId BigInt
+  status     TicketStatus @default(OPEN)
+
+  assignedOperator   Operator? @relation("AssignedOperator", fields: [assignedOperatorId], references: [id])
+  assignedOperatorId Int?
+
+  subject String? // short snippet from the first message
+
+  createdAt     DateTime  @default(now())
+  closedAt      DateTime?
+  lastMessageAt DateTime  @default(now())
+
+  // unread counters drive the dashboard badges
+  unreadForOperator Int @default(0)
+
+  messages Message[]
+
+  // Fast lookups: the customer's currently-open ticket, queue ordering, filters.
+  @@index([customerId, status])
+  @@index([status, assignedOperatorId, lastMessageAt])
+  @@index([assignedOperatorId, status])
+  @@index([lastMessageAt])
+}
+
+enum TicketStatus {
+  OPEN
+  CLOSED
+}
+
+model Message {
+  id         BigInt    @id @default(autoincrement())
+  ticket     Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId   Int
+  sender     Sender
+  operator   Operator? @relation(fields: [operatorId], references: [id])
+  operatorId Int?
+
+  text String? @db.Text
+
+  // Media: telegram file_id + kind ("photo" | "document" | "video" | "voice"), optional.
+  mediaType   String?
+  mediaFileId String?
+  fileName    String?
+
+  telegramMessageId Int?
+  createdAt         DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+enum Sender {
+  CUSTOMER
+  OPERATOR
+  SYSTEM
+}
