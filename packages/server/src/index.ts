@@ -21,19 +21,44 @@ async function main() {
 
   // 3. Telegram bot (long polling)
   await setBotCommands().catch((e) => logger.warn('setMyCommands failed', e));
-  bot.catch((err) => logger.error('Bot error', err));
-  // start() resolves only when the bot stops; run it detached. A bad token or
-  // transient Telegram error must not take the HTTP server down.
-  bot
-    .start({
-      drop_pending_updates: false,
-      onStart: (me) => logger.info(`Bot @${me.username} started (long polling)`),
-    })
-    .catch((e) => logger.error('Bot polling stopped', e));
+  // bot.catch handles errors thrown inside update handlers (middleware), so a
+  // single bad message never crashes the bot.
+  bot.catch((err) => logger.error('Bot handler error', err.error));
 
-  // graceful shutdown
+  let botShuttingDown = false;
+
+  // Supervised long polling: transient failures (network blips, or a 409 while
+  // an old deployment is still shutting down) must NOT kill the bot. We log and
+  // retry with backoff until polling succeeds or we're shutting down.
+  const runBotSupervised = async () => {
+    while (!botShuttingDown) {
+      try {
+        await bot.start({
+          drop_pending_updates: false,
+          onStart: (me) => logger.info(`Bot @${me.username} started (long polling)`),
+        });
+        break; // resolved because bot.stop() was called
+      } catch (err) {
+        if (botShuttingDown) break;
+        const code = (err as { error_code?: number })?.error_code;
+        if (code === 409) {
+          logger.warn(
+            'Bot polling conflict (409): another instance is using this BOT_TOKEN. ' +
+              'Ensure only one service/replica runs. Retrying in 5s…',
+          );
+        } else {
+          logger.error('Bot polling error, retrying in 5s', err);
+        }
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    }
+  };
+  void runBotSupervised();
+
+  // graceful shutdown — stop polling promptly so redeploys don't overlap.
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down...`);
+    botShuttingDown = true;
     try {
       await bot.stop();
       await app.close();
