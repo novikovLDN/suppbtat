@@ -6,7 +6,9 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import websocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
-import { config } from '../config.js';
+import { webhookCallback } from 'grammy';
+import { config, botMode, webhookPath } from '../config.js';
+import { bot } from '../bot/instance.js';
 import { logger } from '../lib/logger.js';
 import { authRoutes } from './routes/auth.js';
 import { ticketRoutes } from './routes/tickets.js';
@@ -29,6 +31,16 @@ export async function buildServer() {
 
   app.get('/api/health', async () => ({ ok: true, brand: config.brand.name }));
   app.get('/api/config', async () => ({ brand: config.brand.name }));
+
+  // Telegram webhook endpoint (only in webhook mode). The path embeds a secret
+  // and we additionally verify Telegram's secret_token header.
+  if (botMode() === 'webhook') {
+    app.post(
+      webhookPath(),
+      webhookCallback(bot, 'fastify', { secretToken: config.bot.webhookSecret }),
+    );
+    logger.info(`Webhook endpoint registered at ${webhookPath()}`);
+  }
 
   await app.register(authRoutes);
   await app.register(ticketRoutes);

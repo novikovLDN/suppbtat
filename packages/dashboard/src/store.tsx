@@ -16,6 +16,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // One-tap admin login: /admin in the bot links here with ?login=<token>.
+    const params = new URLSearchParams(location.search);
+    const loginToken = params.get('login');
+    if (loginToken) {
+      setToken(loginToken);
+      params.delete('login');
+      const clean = location.pathname + (params.toString() ? `?${params}` : '');
+      window.history.replaceState({}, '', clean);
+    }
+
     if (!getToken()) {
       setLoading(false);
       return;

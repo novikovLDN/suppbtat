@@ -30,6 +30,23 @@ export function clearAwaiting(userId: number) {
   awaiting.delete(userId);
 }
 
+/* ─── "Дополнить тикет" one-shot mode ───────────────────────── */
+// userId -> ticketId the next message should supplement.
+const supplement = new Map<number, number>();
+
+export function setSupplementMode(userId: number, ticketId: number) {
+  supplement.set(userId, ticketId);
+  setAwaiting(userId); // also open the message gate
+}
+
+export function getSupplementMode(userId: number): number | null {
+  return supplement.get(userId) ?? null;
+}
+
+export function clearSupplementMode(userId: number) {
+  supplement.delete(userId);
+}
+
 // periodic cleanup so the map can't grow unbounded under abuse
 setInterval(() => {
   const now = Date.now();

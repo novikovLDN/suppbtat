@@ -1,11 +1,13 @@
-import type { Context } from 'grammy';
+import { Context, InlineKeyboard } from 'grammy';
 import { bot } from './instance.js';
+import { config } from '../config.js';
 import { t, ticketStatusLabel } from './texts.js';
 import {
   mainMenuKeyboard,
   backToMenuKeyboard,
   ticketCreatedKeyboard,
   activeTicketKeyboard,
+  type ActiveTicketInfo,
 } from './keyboards.js';
 import { isWithinWorkingHours } from './workhours.js';
 import {
@@ -14,29 +16,38 @@ import {
   getOrCreateActiveTicket,
   listCustomerTickets,
   closeTicket,
-  getTicketById,
+  markTicketSupplemented,
 } from '../services/tickets.js';
 import { addCustomerMessage, addSystemMessage, type IncomingMedia } from '../services/messages.js';
 import { ticketNumber } from '../services/serializers.js';
+import { signToken } from '../api/auth.js';
+import { prisma } from '../db.js';
 import { logger } from '../lib/logger.js';
-import { setAwaiting, isAwaiting, clearAwaiting } from './session.js';
+import {
+  setAwaiting,
+  isAwaiting,
+  clearAwaiting,
+  setSupplementMode,
+  getSupplementMode,
+  clearSupplementMode,
+} from './session.js';
 import { checkRate } from './antispam.js';
 import { moderate, moderationMessage } from './moderation.js';
 
 const HTML = { parse_mode: 'HTML' as const };
 
-async function activeTicketId(tgId: number | undefined): Promise<number | null> {
+async function activeTicketInfo(tgId: number | undefined): Promise<ActiveTicketInfo | null> {
   if (!tgId) return null;
   const ticket = await findActiveTicket(BigInt(tgId));
-  return ticket?.id ?? null;
+  return ticket ? { id: ticket.id, supplemented: ticket.supplemented } : null;
 }
 
 /* ─── Commands ─────────────────────────────────────────────── */
 
 bot.command('start', async (ctx) => {
   const first = ctx.from?.first_name || 'друг';
-  const activeId = await activeTicketId(ctx.from?.id);
-  await ctx.reply(t.welcome(first), { reply_markup: mainMenuKeyboard(activeId) });
+  const active = await activeTicketInfo(ctx.from?.id);
+  await ctx.reply(t.welcome(first), { reply_markup: mainMenuKeyboard(active) });
 });
 
 bot.command('help', async (ctx) => {
@@ -47,13 +58,41 @@ bot.command('tickets', async (ctx) => {
   await sendMyTickets(ctx);
 });
 
+/* ─── Admin one-tap login ──────────────────────────────────── */
+
+bot.command('admin', async (ctx) => {
+  const fromId = ctx.from?.id;
+  // Silent for everyone except the configured admin Telegram id (anti-abuse).
+  if (!fromId || !config.admin.telegramId || String(fromId) !== String(config.admin.telegramId)) {
+    return;
+  }
+  // Mint a session token for the bootstrap admin operator account.
+  const admin = await prisma.operator.findUnique({ where: { username: config.admin.username } });
+  if (!admin) {
+    await ctx.reply('⚠️ Учётная запись администратора не найдена. Проверьте ADMIN_USERNAME.');
+    return;
+  }
+  const token = signToken({ sub: admin.id, username: admin.username, role: 'ADMIN', name: admin.displayName });
+  const base = config.bot.publicUrl;
+  if (base && base.startsWith('https://')) {
+    const url = `${base}/?login=${encodeURIComponent(token)}`;
+    await ctx.reply(t.adminPanel(url), {
+      ...HTML,
+      reply_markup: new InlineKeyboard().url('🖥 Открыть дашборд', url),
+    });
+  } else {
+    await ctx.reply(t.adminPanelNoUrl(token), HTML);
+  }
+});
+
 /* ─── Callback buttons ─────────────────────────────────────── */
 
 bot.callbackQuery('back_to_menu', async (ctx) => {
   await ctx.answerCallbackQuery();
+  if (ctx.from) clearSupplementMode(ctx.from.id);
   const first = ctx.from?.first_name || 'друг';
-  const activeId = await activeTicketId(ctx.from?.id);
-  await ctx.reply(t.welcome(first), { reply_markup: mainMenuKeyboard(activeId) });
+  const active = await activeTicketInfo(ctx.from?.id);
+  await ctx.reply(t.welcome(first), { reply_markup: mainMenuKeyboard(active) });
 });
 
 bot.callbackQuery('help', async (ctx) => {
@@ -70,13 +109,24 @@ bot.callbackQuery('contact_support', async (ctx) => {
 
 bot.callbackQuery('supplement', async (ctx) => {
   await ctx.answerCallbackQuery();
-  if (ctx.from) setAwaiting(ctx.from.id);
-  const activeId = await activeTicketId(ctx.from?.id);
-  if (!activeId) {
+  const tgId = ctx.from?.id;
+  if (!tgId) return;
+  const ticket = await findActiveTicket(BigInt(tgId));
+  if (!ticket) {
+    setAwaiting(tgId);
     await ctx.reply(t.contactPrompt, { ...HTML, reply_markup: backToMenuKeyboard() });
     return;
   }
-  await ctx.reply(t.supplementPrompt(activeId), { ...HTML, reply_markup: backToMenuKeyboard() });
+  // One supplement per ticket.
+  if (ticket.supplemented) {
+    await ctx.reply(t.alreadySupplemented(ticket.id), {
+      ...HTML,
+      reply_markup: backToMenuKeyboard(),
+    });
+    return;
+  }
+  setSupplementMode(tgId, ticket.id);
+  await ctx.reply(t.supplementPrompt(ticket.id), { ...HTML, reply_markup: backToMenuKeyboard() });
 });
 
 bot.callbackQuery('my_tickets', async (ctx) => {
@@ -92,6 +142,7 @@ bot.callbackQuery('close_ticket', async (ctx) => {
     await ctx.reply('У вас нет активного тикета.', { reply_markup: mainMenuKeyboard(null) });
     return;
   }
+  if (tgId) clearSupplementMode(tgId);
   await closeTicket(ticket.id);
   await addSystemMessage(ticket.id, 'Тикет закрыт пользователем.');
   await ctx.reply(t.ticketClosedByUser(ticket.id), { ...HTML, reply_markup: mainMenuKeyboard(null) });
@@ -116,7 +167,10 @@ async function sendMyTickets(ctx: Context) {
     }
   }
 
-  const kb = active ? activeTicketKeyboard(active.id) : mainMenuKeyboard(null);
+  const info: ActiveTicketInfo | null = active
+    ? { id: active.id, supplemented: active.supplemented }
+    : null;
+  const kb = info ? activeTicketKeyboard(info) : mainMenuKeyboard(null);
   await ctx.reply(text, { ...HTML, reply_markup: kb });
 }
 
@@ -206,6 +260,18 @@ async function handleIncoming(ctx: Context) {
     clearAwaiting(userId);
 
     const resting = !isWithinWorkingHours();
+
+    // Completing a "Дополнить тикет" action: confirm once, then lock it.
+    const supplementingTicketId = getSupplementMode(userId);
+    if (!created && supplementingTicketId === ticket.id && !ticket.supplemented) {
+      clearSupplementMode(userId);
+      await markTicketSupplemented(ticket.id);
+      await ctx.reply(t.supplementDone(ticket.id), {
+        ...HTML,
+        reply_markup: backToMenuKeyboard(),
+      });
+      return;
+    }
 
     if (created) {
       await ctx.reply(t.ticketCreated(ticket.id), { ...HTML, reply_markup: ticketCreatedKeyboard() });

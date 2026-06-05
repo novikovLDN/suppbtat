@@ -114,6 +114,16 @@ export async function reopenTicket(ticketId: number) {
   return ticket;
 }
 
+export async function markTicketSupplemented(ticketId: number) {
+  const ticket = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { supplemented: true },
+    include: ticketInclude,
+  });
+  bus.publish({ type: 'ticket:updated', ticket: serializeTicket(ticket) });
+  return ticket;
+}
+
 export async function markTicketRead(ticketId: number) {
   const ticket = await prisma.ticket.update({
     where: { id: ticketId },

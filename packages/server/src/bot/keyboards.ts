@@ -1,10 +1,15 @@
 import { InlineKeyboard } from 'grammy';
 import { ticketNumber } from '../services/serializers.js';
 
-export function mainMenuKeyboard(activeTicketId: number | null): InlineKeyboard {
+export interface ActiveTicketInfo {
+  id: number;
+  supplemented: boolean;
+}
+
+export function mainMenuKeyboard(active: ActiveTicketInfo | null): InlineKeyboard {
   const kb = new InlineKeyboard().text('🆘 Написать в поддержку', 'contact_support').row();
-  if (activeTicketId) {
-    kb.text(`📝 Дополнить тикет #${ticketNumber(activeTicketId)}`, 'supplement').row();
+  if (active && !active.supplemented) {
+    kb.text(`📝 Дополнить тикет #${ticketNumber(active.id)}`, 'supplement').row();
   }
   kb.text('📋 Мои тикеты', 'my_tickets').row();
   kb.text('❓ Помощь', 'help');
@@ -22,11 +27,11 @@ export function ticketCreatedKeyboard(): InlineKeyboard {
     .text('🔒 Закрыть тикет', 'close_ticket');
 }
 
-export function activeTicketKeyboard(ticketId: number): InlineKeyboard {
-  return new InlineKeyboard()
-    .text(`📝 Дополнить тикет #${ticketNumber(ticketId)}`, 'supplement')
-    .row()
-    .text('🔒 Закрыть тикет', 'close_ticket')
-    .row()
-    .text('⬅️ В главное меню', 'back_to_menu');
+export function activeTicketKeyboard(active: ActiveTicketInfo): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  if (!active.supplemented) {
+    kb.text(`📝 Дополнить тикет #${ticketNumber(active.id)}`, 'supplement').row();
+  }
+  kb.text('🔒 Закрыть тикет', 'close_ticket').row().text('⬅️ В главное меню', 'back_to_menu');
+  return kb;
 }

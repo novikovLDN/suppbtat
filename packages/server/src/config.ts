@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import crypto from 'node:crypto';
 
 function req(name: string): string {
   const v = process.env[name];
@@ -30,6 +31,20 @@ export const config = {
 
   botToken: req('BOT_TOKEN'),
 
+  bot: {
+    // 'auto' (default) = webhook when a public URL is known, else long polling.
+    mode: (opt('BOT_MODE', 'auto') as 'auto' | 'webhook' | 'polling'),
+    // Public base URL of this service. Railway exposes RAILWAY_PUBLIC_DOMAIN.
+    publicUrl: (
+      process.env.PUBLIC_URL ||
+      (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '')
+    ).replace(/\/+$/, ''),
+    // Stable secret for the webhook path + Telegram secret_token header.
+    webhookSecret:
+      process.env.WEBHOOK_SECRET ||
+      crypto.createHash('sha256').update(`${req('BOT_TOKEN')}:webhook`).digest('hex').slice(0, 40),
+  },
+
   jwtSecret: req('JWT_SECRET'),
 
   admin: {
@@ -55,3 +70,18 @@ export const config = {
 };
 
 export type Config = typeof config;
+
+/** Resolve the effective bot transport based on config + environment. */
+export function botMode(): 'webhook' | 'polling' {
+  if (config.bot.mode === 'webhook') return 'webhook';
+  if (config.bot.mode === 'polling') return 'polling';
+  return config.bot.publicUrl ? 'webhook' : 'polling';
+}
+
+export function webhookPath(): string {
+  return `/telegram/${config.bot.webhookSecret}`;
+}
+
+export function webhookUrl(): string {
+  return `${config.bot.publicUrl}${webhookPath()}`;
+}

@@ -22,8 +22,10 @@ Built to comfortably handle **1000–1500 concurrent chats** on a single instanc
 
 **Bot (client side)** — mirrors the agreed flow:
 - `/start` welcome with template + inline menu, `/help`, `/tickets`
+- `/admin` — one-tap login to the dashboard for the configured admin Telegram id
 - Ticket creation with display numbers (`#13102`), open/closed status
-- "Мои тикеты" history, **"Дополнить тикет"** flow with hints
+- "Мои тикеты" history, **"Дополнить тикет"** flow (once per ticket, with hints)
+- Webhook on Railway / long polling locally — chosen automatically
 - Photos / documents — both with a caption and standalone
 - Working-hours notice ("Поддержка сейчас отдыхает")
 - **Anti-ban protection:**
@@ -89,6 +91,9 @@ See `.env.example`. Key ones:
 | `DATABASE_URL` | Postgres connection string |
 | `JWT_SECRET` | Long random string for session tokens |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Bootstrap admin (re-applied on each start) |
+| `ADMIN_TELEGRAM_ID` | Telegram id allowed to use `/admin` one-tap login |
+| `BOT_MODE` | `auto` (default) / `webhook` / `polling` |
+| `PUBLIC_URL` | Public HTTPS URL (auto-derived on Railway) |
 | `BRAND_NAME` | Branding shown to users (default `Atlas Secure`) |
 | `WORK_HOURS_ENABLED` / `SUPPORT_TZ` / `WORK_HOURS_START` / `WORK_HOURS_END` | Working-hours notice |
 | `TICKET_NUMBER_OFFSET` | Display numbers start near this value |

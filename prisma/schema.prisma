@@ -63,6 +63,9 @@ model Ticket {
   // unread counters drive the dashboard badges
   unreadForOperator Int @default(0)
 
+  // the customer may use the "Дополнить тикет" action exactly once per ticket
+  supplemented Boolean @default(false)
+
   messages Message[]
 
   // Fast lookups: the customer's currently-open ticket, queue ordering, filters.
