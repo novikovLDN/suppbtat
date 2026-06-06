@@ -41,30 +41,63 @@ export interface PushPayload {
   ticketId?: number;
 }
 
-export async function pushToAllOperators(payload: PushPayload) {
-  if (!ready) return;
-  const subs = await prisma.pushSubscription.findMany();
-  if (subs.length === 0) return;
+export interface SendResult {
+  sent: number;
+  failed: number;
+  errors: string[];
+}
 
+type Sub = { id: number; endpoint: string; p256dh: string; auth: string };
+
+async function sendToSubs(subs: Sub[], payload: PushPayload): Promise<SendResult> {
+  const result: SendResult = { sent: 0, failed: 0, errors: [] };
+  if (!ready || subs.length === 0) return result;
   const data = JSON.stringify(payload);
+
   await Promise.all(
     subs.map(async (s) => {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           data,
+          { TTL: 120 },
         );
+        result.sent++;
       } catch (err) {
-        const status = (err as { statusCode?: number }).statusCode;
-        // 404/410 = subscription expired or unsubscribed -> clean it up.
-        if (status === 404 || status === 410) {
+        result.failed++;
+        const e = err as { statusCode?: number; body?: string; message?: string };
+        const host = (() => {
+          try {
+            return new URL(s.endpoint).host;
+          } catch {
+            return '?';
+          }
+        })();
+        const detail = `${host} → ${e.statusCode ?? '?'} ${String(e.body || e.message || '').slice(0, 160)}`;
+        result.errors.push(detail);
+        logger.warn(`push send failed: ${detail}`);
+        // 404/410 = expired/unsubscribed -> remove it.
+        if (e.statusCode === 404 || e.statusCode === 410) {
           await prisma.pushSubscription.delete({ where: { id: s.id } }).catch(() => {});
-        } else {
-          logger.warn('push send failed', status);
         }
       }
     }),
   );
+  return result;
+}
+
+export async function pushToAllOperators(payload: PushPayload): Promise<SendResult> {
+  if (!ready) return { sent: 0, failed: 0, errors: ['push disabled (no VAPID keys)'] };
+  const subs = await prisma.pushSubscription.findMany();
+  logger.info(`push: ticket notification → ${subs.length} subscription(s)`);
+  return sendToSubs(subs, payload);
+}
+
+export async function pushToOperator(operatorId: number, payload: PushPayload): Promise<SendResult> {
+  if (!ready) return { sent: 0, failed: 0, errors: ['push disabled (no VAPID keys on server)'] };
+  const subs = await prisma.pushSubscription.findMany({ where: { operatorId } });
+  logger.info(`push: test → operator ${operatorId}, ${subs.length} subscription(s)`);
+  return sendToSubs(subs, payload);
 }
 
 export async function saveSubscription(

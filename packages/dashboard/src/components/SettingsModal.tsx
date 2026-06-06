@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { api } from '../api';
 import {
   disablePush,
   enablePush,
@@ -13,6 +14,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [checked, setChecked] = useState(false);
+  const [testMsg, setTestMsg] = useState('');
+  const [testing, setTesting] = useState(false);
 
   const blocked = pushBlockedReason();
   const needsInstall = isIOS() && !isStandalone();
@@ -26,6 +29,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const toggle = async () => {
     if (busy) return;
     setError('');
+    setTestMsg('');
     setBusy(true);
     try {
       if (enabled) {
@@ -39,6 +43,22 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       setError(e instanceof Error ? e.message : 'Не удалось изменить настройку');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const sendTest = async () => {
+    setTesting(true);
+    setTestMsg('');
+    setError('');
+    try {
+      const r = await api.pushTest();
+      if (r.sent > 0) setTestMsg(`Отправлено на ${r.sent} устройств(о). Уведомление должно прийти в течение пары секунд.`);
+      else if (r.failed > 0) setError(`Не доставлено. Причина: ${r.errors[0] || 'неизвестно'}`);
+      else setError('Нет активной подписки на этом устройстве. Включите тумблер заново.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ошибка теста');
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -104,9 +124,19 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 {error}
               </div>
             )}
-            {enabled && !error && (
-              <div className="mt-3 text-xs text-emerald-300">✓ Уведомления включены на этом устройстве</div>
+            {enabled && (
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="text-xs text-emerald-300">✓ Включены на этом устройстве</span>
+                <button
+                  onClick={sendTest}
+                  disabled={testing}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 transition hover:bg-white/10 disabled:opacity-50"
+                >
+                  {testing ? 'Отправка…' : '🔔 Тест уведомления'}
+                </button>
+              </div>
             )}
+            {testMsg && <div className="mt-2 text-xs text-emerald-300">{testMsg}</div>}
           </div>
 
           {/* PWA hint */}

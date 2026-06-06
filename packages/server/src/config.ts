@@ -24,6 +24,15 @@ function int(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** Coerce a VAPID subject into a valid mailto:/https: URL (Apple is strict). */
+function normalizeVapidSubject(s: string): string {
+  const v = (s || '').trim();
+  if (/^(mailto:|https?:\/\/)/i.test(v)) return v;
+  if (v.includes('@')) return `mailto:${v}`;
+  if (v) return `https://${v.replace(/^\/+/, '')}`;
+  return 'mailto:support@atlas-secure.app';
+}
+
 export const config = {
   nodeEnv: opt('NODE_ENV', 'development'),
   isProd: opt('NODE_ENV', 'development') === 'production',
@@ -71,7 +80,9 @@ export const config = {
   push: {
     publicKey: process.env.VAPID_PUBLIC_KEY || '',
     privateKey: process.env.VAPID_PRIVATE_KEY || '',
-    subject: opt('VAPID_SUBJECT', 'mailto:support@atlas-secure.app'),
+    // Apple Web Push requires a valid mailto: or https: subject — normalize
+    // bare domains / emails so a misconfigured value doesn't cause 403s.
+    subject: normalizeVapidSubject(opt('VAPID_SUBJECT', 'mailto:support@atlas-secure.app')),
     get enabled() {
       return Boolean(this.publicKey && this.privateKey);
     },

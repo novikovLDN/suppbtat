@@ -85,6 +85,8 @@ export const api = {
     request<{ ok: true }>('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription }) }),
   pushUnsubscribe: (endpoint: string) =>
     request<{ ok: true }>('/api/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+  pushTest: () =>
+    request<{ sent: number; failed: number; errors: string[] }>('/api/push/test', { method: 'POST' }),
 
   // Templates (canned replies)
   listTemplates: () => request<{ templates: Template[] }>('/api/templates'),

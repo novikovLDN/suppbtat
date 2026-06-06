@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAuth } from '../auth.js';
 import { config } from '../../config.js';
-import { saveSubscription, removeSubscription } from '../../services/push.js';
+import { saveSubscription, removeSubscription, pushToOperator } from '../../services/push.js';
 
 const subSchema = z.object({
   subscription: z.object({
@@ -32,5 +32,14 @@ export async function pushRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send({ error: 'Invalid input' });
     await removeSubscription(parsed.data.endpoint);
     return { ok: true };
+  });
+
+  // Send a test push to the current operator's own devices — for diagnostics.
+  app.post('/api/push/test', { preHandler: requireAuth }, async (req) => {
+    const result = await pushToOperator(req.operator!.sub, {
+      title: '✅ Тест уведомления',
+      body: 'Если вы это видите — push работает 🎉',
+    });
+    return result;
   });
 }
