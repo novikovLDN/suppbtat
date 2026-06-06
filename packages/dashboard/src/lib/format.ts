@@ -48,22 +48,34 @@ export interface StatusBadge {
 /** The three operational states the dashboard must show clearly. */
 export function statusBadge(t: Ticket): StatusBadge {
   if (t.status === 'CLOSED') {
-    return { label: 'Закрыт', className: 'bg-slate-700/60 text-slate-300', dot: 'bg-slate-400' };
+    return {
+      label: 'Закрыт',
+      className: 'bg-slate-500/10 text-slate-300 ring-1 ring-inset ring-slate-400/20',
+      dot: 'bg-slate-400',
+    };
   }
   if (t.assignedOperatorId === null) {
-    return { label: 'Новый', className: 'bg-amber-500/15 text-amber-300', dot: 'bg-amber-400' };
+    return {
+      label: 'Новый',
+      className: 'bg-amber-400/10 text-amber-300 ring-1 ring-inset ring-amber-400/25',
+      dot: 'bg-amber-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.5)]',
+    };
   }
-  return { label: 'В работе', className: 'bg-emerald-500/15 text-emerald-300', dot: 'bg-emerald-400' };
+  return {
+    label: 'В работе',
+    className: 'bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-400/25',
+    dot: 'bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.5)]',
+  };
 }
 
 const avatarColors = [
-  'bg-rose-500/20 text-rose-300',
-  'bg-sky-500/20 text-sky-300',
-  'bg-violet-500/20 text-violet-300',
-  'bg-emerald-500/20 text-emerald-300',
-  'bg-amber-500/20 text-amber-300',
-  'bg-cyan-500/20 text-cyan-300',
-  'bg-fuchsia-500/20 text-fuchsia-300',
+  'bg-gradient-to-br from-rose-500/40 to-orange-500/20 text-rose-100',
+  'bg-gradient-to-br from-sky-500/40 to-cyan-500/20 text-sky-100',
+  'bg-gradient-to-br from-violet-500/40 to-indigo-500/20 text-violet-100',
+  'bg-gradient-to-br from-emerald-500/40 to-teal-500/20 text-emerald-100',
+  'bg-gradient-to-br from-amber-500/40 to-yellow-500/20 text-amber-100',
+  'bg-gradient-to-br from-cyan-500/40 to-blue-500/20 text-cyan-100',
+  'bg-gradient-to-br from-fuchsia-500/40 to-pink-500/20 text-fuchsia-100',
 ];
 
 export function avatarColor(id: string): string {

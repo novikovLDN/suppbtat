@@ -125,6 +125,12 @@ export function useChatStore(operator: Operator) {
     }
   }, []);
 
+  const deselect = useCallback(() => {
+    setSelectedId(null);
+    setSelected(null);
+    setMessages([]);
+  }, []);
+
   const sendMessage = useCallback(
     async (text: string, file?: File | null) => {
       if (!selectedIdRef.current) return;
@@ -157,6 +163,7 @@ export function useChatStore(operator: Operator) {
     connected,
     loadingList,
     selectTicket,
+    deselect,
     sendMessage,
     refreshList,
     claim: () => doAction('claim'),

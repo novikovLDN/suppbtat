@@ -3,6 +3,9 @@ import { api } from '../api';
 import type { Operator } from '../types';
 import { dateTime } from '../lib/format';
 
+const inputCls =
+  'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20';
+
 export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,61 +50,63 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"
+        className="glass animate-slide-up flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 shadow-2xl sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
           <h2 className="text-sm font-semibold">⚙️ Управление операторами</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/10"
+          >
             ✕
           </button>
         </div>
 
-        <div className="overflow-y-auto p-5">
-          {/* Create form */}
-          <form onSubmit={create} className="mb-6 grid grid-cols-2 gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-            <div className="col-span-2 text-xs font-medium text-slate-400">Новый оператор</div>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Логин"
-              className="rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-            />
+        <div className="overflow-y-auto p-4 sm:p-5">
+          <form
+            onSubmit={create}
+            className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2"
+          >
+            <div className="text-xs font-medium text-slate-400 sm:col-span-2">Новый оператор</div>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Логин" className={inputCls} />
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Отображаемое имя"
-              className="rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              className={inputCls}
             />
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               placeholder="Пароль (мин. 6)"
-              className="rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              className={inputCls}
             />
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-            >
+            <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls}>
               <option value="OPERATOR">Оператор</option>
               <option value="ADMIN">Администратор</option>
             </select>
             <button
               type="submit"
               disabled={creating || !username || !displayName || password.length < 6}
-              className="col-span-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-500 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none sm:col-span-2"
             >
               {creating ? 'Создание…' : 'Создать оператора'}
             </button>
           </form>
 
-          {error && <div className="mb-3 rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</div>}
+          {error && (
+            <div className="mb-3 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-300 ring-1 ring-inset ring-rose-500/20">
+              {error}
+            </div>
+          )}
 
-          {/* List */}
           {loading ? (
             <div className="text-center text-sm text-slate-500">Загрузка…</div>
           ) : (
@@ -109,28 +114,30 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               {operators.map((op) => (
                 <div
                   key={op.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{op.displayName}</span>
+                      <span className="truncate font-medium">{op.displayName}</span>
                       <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] ${
-                          op.role === 'ADMIN' ? 'bg-violet-500/20 text-violet-300' : 'bg-slate-700/60 text-slate-300'
+                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] ${
+                          op.role === 'ADMIN'
+                            ? 'bg-violet-500/20 text-violet-300'
+                            : 'bg-white/10 text-slate-300'
                         }`}
                       >
                         {op.role === 'ADMIN' ? 'Админ' : 'Оператор'}
                       </span>
-                      {!op.isActive && <span className="text-[10px] text-rose-400">отключён</span>}
+                      {!op.isActive && <span className="shrink-0 text-[10px] text-rose-400">отключён</span>}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="truncate text-xs text-slate-500">
                       @{op.username}
                       {op.lastSeenAt ? ` · был(а) ${dateTime(op.lastSeenAt)}` : ''}
                     </div>
                   </div>
                   <button
                     onClick={() => toggleActive(op)}
-                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+                    className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 transition hover:bg-white/10 active:scale-95"
                   >
                     {op.isActive ? 'Отключить' : 'Включить'}
                   </button>
