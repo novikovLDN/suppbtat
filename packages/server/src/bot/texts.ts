@@ -5,8 +5,8 @@ import { ce } from './emoji.js';
 const brand = config.brand.name;
 
 export const t = {
-  welcome: (firstName: string) =>
-    `Привет, ${firstName} ${ce('wave', '👋')}\n` +
+  welcome:
+    `Привет ${ce('wave', '👋')}\n` +
     `Тебя приветствует служба поддержки ${brand}.\n\n` +
     `Чтобы мы помогли — нажми кнопку «🆘 Написать в поддержку» ниже и опиши проблему по шаблону ✅\n\n` +
     `|- Что не работает?\n` +
@@ -43,14 +43,6 @@ export const t = {
     `• Приложите скриншоты, если возможно 📷\n\n` +
     `✍️ <i>Напишите ваше сообщение — я создам тикет автоматически.</i>`,
 
-  supplementPrompt: (ticketId: number) =>
-    `📝 <b>Дополнить тикет #${ticketNumber(ticketId)}</b>\n\n` +
-    `Добавьте новую информацию, которая поможет оператору:\n` +
-    `• Что изменилось с момента обращения\n` +
-    `• Дополнительные детали или шаги, которые вы пробовали\n` +
-    `• Свежие скриншоты или фото ошибки 📷\n\n` +
-    `✍️ <i>Просто отправьте текст и/или фото — всё попадёт в этот тикет.</i>`,
-
   ticketCreated: (ticketId: number) =>
     `✅ <b>Ваш запрос получен!</b>\n` +
     `Специалист технической поддержки свяжется с вами в ближайшее время.\n\n` +
@@ -60,14 +52,6 @@ export const t = {
 
   appended: (ticketId: number) =>
     `📨 <i>Добавлено в тикет #${ticketNumber(ticketId)}. Оператор увидит ваше сообщение.</i>`,
-
-  supplementDone: (ticketId: number) =>
-    `✅ <b>Тикет #${ticketNumber(ticketId)} дополнен.</b>\n\n` +
-    `Ваша информация передана оператору. Спасибо!`,
-
-  alreadySupplemented: (ticketId: number) =>
-    `ℹ️ <b>Тикет #${ticketNumber(ticketId)} уже был дополнен.</b>\n\n` +
-    `Повторное дополнение недоступно. Если нужно — дождитесь ответа оператора в этом чате.`,
 
   adminPanel: (url: string) =>
     `🛡 <b>Панель администратора Atlas Secure</b>\n\n` +
@@ -107,9 +91,9 @@ export const t = {
     `Надеемся, мы помогли! Если вопрос остался — нажмите ` +
     `«🆘 Написать в поддержку», чтобы открыть новый тикет.`,
 
-  operatorJoined: (ticketId: number, name: string) =>
-    `👨‍💻 <b>${name}</b> из поддержки взял ваш тикет #${ticketNumber(ticketId)} в работу.\n` +
-    `Опишите, пожалуйста, детали — мы уже на связи.`,
+  claimedNotice: (name: string) =>
+    `🙌 <b>Ваш чат взят в работу.</b>\n` +
+    `На связи — <b>${name}</b>. Уже занимаемся вашим вопросом!`,
 };
 
 export function ticketStatusLabel(status: 'OPEN' | 'CLOSED'): string {

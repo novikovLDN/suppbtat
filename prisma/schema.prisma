@@ -67,6 +67,10 @@ model Ticket {
   // the customer may use the "Дополнить тикет" action exactly once per ticket
   supplemented Boolean @default(false)
 
+  // customer-facing persona name + whether the "taken into work" notice was sent
+  assignedName  String?
+  claimNotified Boolean @default(false)
+
   messages Message[]
 
   // Fast lookups: the customer's currently-open ticket, queue ordering, filters.

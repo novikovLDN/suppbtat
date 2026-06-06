@@ -21,6 +21,7 @@ export interface SerializedTicket {
   status: 'OPEN' | 'CLOSED';
   assignedOperatorId: number | null;
   assignedOperatorName: string | null;
+  assignedName: string | null;
   subject: string | null;
   customer: {
     id: string;

@@ -9,11 +9,13 @@ import {
   closeTicket,
   reopenTicket,
   markTicketRead,
+  setClaimNotified,
   countsByScope,
 } from '../../services/tickets.js';
 import { listMessages, addOperatorMessage, addSystemMessage, notifyCustomer } from '../../services/messages.js';
 import { serializeTicket } from '../../services/serializers.js';
 import { t } from '../../bot/texts.js';
+import { isValidPersona, randomPersona } from '../../bot/personas.js';
 import { logger } from '../../lib/logger.js';
 
 const listQuery = z.object({
@@ -61,9 +63,24 @@ export async function ticketRoutes(app: FastifyInstance) {
     if (!ticket) return reply.code(404).send({ error: 'Not found' });
     if (ticket.status !== 'OPEN') return reply.code(409).send({ error: 'Ticket is closed' });
 
-    const updated = await assignTicket(id, req.operator!.sub);
-    await addSystemMessage(id, `Оператор ${req.operator!.name} взял тикет в работу.`);
-    await notifyCustomer(id, t.operatorJoined(id, req.operator!.name)).catch(() => {});
+    // Persona shown to the customer. Once notified, keep it stable; otherwise
+    // use the name chosen in the dashboard, falling back to a random one.
+    const requested = (req.body as { name?: string } | undefined)?.name;
+    const persona = ticket.claimNotified
+      ? ticket.assignedName || randomPersona()
+      : requested && isValidPersona(requested)
+        ? requested
+        : randomPersona();
+
+    // Always (re)assign to this operator; keep the persona consistent.
+    let updated = await assignTicket(id, req.operator!.sub, persona);
+    await addSystemMessage(id, `Взят в работу: ${req.operator!.name} (как «${persona}»).`);
+
+    // Customer-facing "taken into work" notice — exactly once per ticket.
+    if (!ticket.claimNotified) {
+      await notifyCustomer(id, t.claimedNotice(persona)).catch(() => {});
+      updated = await setClaimNotified(id, persona);
+    }
     return { ticket: serializeTicket(updated) };
   });
 

@@ -74,10 +74,21 @@ export async function getTicketById(id: number) {
   return prisma.ticket.findUnique({ where: { id }, include: ticketInclude });
 }
 
-export async function assignTicket(ticketId: number, operatorId: number) {
+export async function assignTicket(ticketId: number, operatorId: number, personaName?: string) {
   const ticket = await prisma.ticket.update({
     where: { id: ticketId },
-    data: { assignedOperatorId: operatorId },
+    data: { assignedOperatorId: operatorId, ...(personaName ? { assignedName: personaName } : {}) },
+    include: ticketInclude,
+  });
+  bus.publish({ type: 'ticket:updated', ticket: serializeTicket(ticket) });
+  return ticket;
+}
+
+/** Mark that the customer-facing "taken into work" notice has been sent (once per ticket). */
+export async function setClaimNotified(ticketId: number, personaName: string) {
+  const ticket = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { claimNotified: true, assignedName: personaName },
     include: ticketInclude,
   });
   bus.publish({ type: 'ticket:updated', ticket: serializeTicket(ticket) });

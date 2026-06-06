@@ -141,9 +141,19 @@ export function useChatStore(operator: Operator) {
   );
 
   const doAction = useCallback(
-    async (action: 'claim' | 'release' | 'close' | 'reopen') => {
+    async (action: 'release' | 'close' | 'reopen') => {
       if (!selectedIdRef.current) return;
       const r = await api[action](selectedIdRef.current);
+      setSelected(r.ticket);
+      upsertLocal(r.ticket);
+    },
+    [upsertLocal],
+  );
+
+  const claim = useCallback(
+    async (name?: string) => {
+      if (!selectedIdRef.current) return;
+      const r = await api.claim(selectedIdRef.current, name);
       setSelected(r.ticket);
       upsertLocal(r.ticket);
     },
@@ -166,7 +176,7 @@ export function useChatStore(operator: Operator) {
     deselect,
     sendMessage,
     refreshList,
-    claim: () => doAction('claim'),
+    claim,
     release: () => doAction('release'),
     close: () => doAction('close'),
     reopen: () => doAction('reopen'),

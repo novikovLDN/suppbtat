@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { ChatStore } from '../useChatStore';
 import { avatarColor, customerName, dateTime, initials, statusBadge } from '../lib/format';
+import { OPERATOR_PERSONAS, getPersona, setPersona } from '../lib/personas';
 
 interface Props {
   store: ChatStore;
@@ -44,6 +46,12 @@ function Body({ store }: { store: ChatStore }) {
   const badge = statusBadge(t);
   const open = t.status === 'OPEN';
   const assigned = t.assignedOperatorId !== null;
+  const [persona, setPersonaState] = useState(getPersona());
+
+  const changePersona = (v: string) => {
+    setPersonaState(v);
+    setPersona(v);
+  };
 
   return (
     <>
@@ -71,17 +79,35 @@ function Body({ store }: { store: ChatStore }) {
         <Row label="Создан" value={dateTime(t.createdAt)} />
         <Row label="Активность" value={dateTime(t.lastMessageAt)} />
         <Row label="Оператор" value={t.assignedOperatorName || 'не назначен'} />
+        <Row label="Имя для клиента" value={t.assignedName || '—'} />
         {t.closedAt && <Row label="Закрыт" value={dateTime(t.closedAt)} />}
       </div>
 
       <div className="space-y-2 p-4">
         {open && !assigned && (
-          <button
-            onClick={() => store.claim()}
-            className="w-full rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 py-2.5 text-sm font-medium text-white shadow-lg shadow-emerald-500/25 transition hover:from-emerald-400 hover:to-teal-500 active:scale-[0.98]"
-          >
-            ✋ Взять в работу
-          </button>
+          <>
+            <label className="block">
+              <span className="mb-1 block text-[11px] text-slate-500">Имя оператора для клиента</span>
+              <select
+                value={persona}
+                onChange={(e) => changePersona(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="">🎲 Случайно</option>
+                {OPERATOR_PERSONAS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              onClick={() => store.claim(persona || undefined)}
+              className="w-full rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 py-2.5 text-sm font-medium text-white shadow-lg shadow-emerald-500/25 transition hover:from-emerald-400 hover:to-teal-500 active:scale-[0.98]"
+            >
+              ✋ Взять в работу
+            </button>
+          </>
         )}
         {open && assigned && (
           <button

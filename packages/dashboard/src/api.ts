@@ -67,7 +67,11 @@ export const api = {
     request<{ ticket: Ticket; messages: Message[] }>(`/api/tickets/${id}`),
 
   markRead: (id: number) => request<{ ok: true }>(`/api/tickets/${id}/read`, { method: 'POST' }),
-  claim: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/claim`, { method: 'POST' }),
+  claim: (id: number, name?: string) =>
+    request<{ ticket: Ticket }>(`/api/tickets/${id}/claim`, {
+      method: 'POST',
+      body: JSON.stringify(name ? { name } : {}),
+    }),
   release: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/release`, { method: 'POST' }),
   close: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/close`, { method: 'POST' }),
   reopen: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/reopen`, { method: 'POST' }),

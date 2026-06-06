@@ -18,6 +18,7 @@ export function serializeTicket(t: TicketWithRelations): SerializedTicket {
     status: t.status,
     assignedOperatorId: t.assignedOperatorId,
     assignedOperatorName: t.assignedOperator?.displayName ?? null,
+    assignedName: t.assignedName ?? null,
     subject: t.subject,
     customer: {
       id: t.customer.id.toString(),

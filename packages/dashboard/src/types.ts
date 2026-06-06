@@ -25,6 +25,7 @@ export interface Ticket {
   status: TicketStatus;
   assignedOperatorId: number | null;
   assignedOperatorName: string | null;
+  assignedName: string | null;
   subject: string | null;
   customer: Customer;
   unreadForOperator: number;
