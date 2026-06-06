@@ -8,12 +8,13 @@ import { TemplatesModal } from './TemplatesModal';
 interface Props {
   store: ChatStore;
   operatorId: number;
+  persona: string;
   className?: string;
   onBack?: () => void;
   onToggleInfo?: () => void;
 }
 
-export function ChatPanel({ store, operatorId, className = '', onBack, onToggleInfo }: Props) {
+export function ChatPanel({ store, operatorId, persona, className = '', onBack, onToggleInfo }: Props) {
   const { selected, messages } = store;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +35,9 @@ export function ChatPanel({ store, operatorId, className = '', onBack, onToggleI
 
   const badge = statusBadge(selected);
   const closed = selected.status === 'CLOSED';
+  // Name the customer sees: locked persona once claimed, else the chosen default.
+  const personaLabel = selected.assignedName || persona || 'Случайно';
+  const personaLocked = !!selected.assignedName;
 
   return (
     <main className={`min-w-0 flex-1 flex-col ${className}`}>
@@ -70,6 +74,13 @@ export function ChatPanel({ store, operatorId, className = '', onBack, onToggleI
             {selected.assignedOperatorName ? ` · ${selected.assignedOperatorName}` : ' · не назначен'}
           </div>
         </div>
+        <span
+          className="flex shrink-0 items-center gap-1 rounded-full bg-violet-500/15 px-2 py-1 text-[11px] text-violet-200 ring-1 ring-inset ring-violet-400/25"
+          title={personaLocked ? 'Имя для клиента (закреплено)' : 'Имя для клиента при взятии в работу'}
+        >
+          🎭 <span className="max-w-[120px] truncate">{personaLabel}</span>
+          {personaLocked && <span className="opacity-60">🔒</span>}
+        </span>
         {onToggleInfo && (
           <button
             onClick={onToggleInfo}

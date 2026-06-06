@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
+import { getPersona, setPersona as savePersona } from '../lib/personas';
 import { TicketList } from './TicketList';
 import { ChatPanel } from './ChatPanel';
 import { InfoPanel } from './InfoPanel';
@@ -13,6 +14,12 @@ export function Dashboard() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [persona, setPersonaState] = useState(getPersona());
+
+  const changePersona = (v: string) => {
+    setPersonaState(v);
+    savePersona(v);
+  };
 
   const hasSelection = store.selectedId !== null;
   const { selectTicket } = store;
@@ -111,19 +118,26 @@ export function Dashboard() {
         <ChatPanel
           store={store}
           operatorId={operator!.id}
+          persona={persona}
           className={hasSelection ? 'flex' : 'hidden lg:flex'}
           onBack={store.deselect}
           onToggleInfo={() => setInfoOpen(true)}
         />
 
         {/* Info: static column on xl, slide-over drawer below xl */}
-        <InfoPanel store={store} variant="column" />
+        <InfoPanel store={store} persona={persona} variant="column" />
         {infoOpen && hasSelection && (
-          <InfoPanel store={store} variant="drawer" onClose={() => setInfoOpen(false)} />
+          <InfoPanel store={store} persona={persona} variant="drawer" onClose={() => setInfoOpen(false)} />
         )}
       </div>
 
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          persona={persona}
+          onPersonaChange={changePersona}
+        />
+      )}
       {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
     </div>
   );

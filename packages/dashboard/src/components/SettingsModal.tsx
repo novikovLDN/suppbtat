@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { OPERATOR_PERSONAS } from '../lib/personas';
 import {
   disablePush,
   enablePush,
@@ -9,7 +10,15 @@ import {
   pushBlockedReason,
 } from '../lib/push';
 
-export function SettingsModal({ onClose }: { onClose: () => void }) {
+export function SettingsModal({
+  onClose,
+  persona,
+  onPersonaChange,
+}: {
+  onClose: () => void;
+  persona: string;
+  onPersonaChange: (v: string) => void;
+}) {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -82,6 +91,27 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-4 p-5">
+          {/* Operator persona */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-center gap-2 text-sm font-medium">🎭 Имя оператора для клиента</div>
+            <p className="mt-1 text-xs text-slate-400">
+              Под этим именем клиент увидит, кто взял его чат в работу. «Случайно» — берётся
+              случайное имя из набора.
+            </p>
+            <select
+              value={persona}
+              onChange={(e) => onPersonaChange(e.target.value)}
+              className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="">🎲 Случайно</option>
+              {OPERATOR_PERSONAS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Notifications toggle */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center justify-between gap-3">
