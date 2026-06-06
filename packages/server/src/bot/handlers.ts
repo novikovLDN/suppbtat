@@ -45,9 +45,9 @@ async function activeTicketInfo(tgId: number | undefined): Promise<ActiveTicketI
 /* ─── Commands ─────────────────────────────────────────────── */
 
 bot.command('start', async (ctx) => {
-  const first = ctx.from?.first_name || 'друг';
+  const first = escapeHtml(ctx.from?.first_name || 'друг');
   const active = await activeTicketInfo(ctx.from?.id);
-  await ctx.reply(t.welcome(first), { reply_markup: mainMenuKeyboard(active) });
+  await ctx.reply(t.welcome(first), { ...HTML, reply_markup: mainMenuKeyboard(active) });
 });
 
 bot.command('help', async (ctx) => {
@@ -90,9 +90,9 @@ bot.command('admin', async (ctx) => {
 bot.callbackQuery('back_to_menu', async (ctx) => {
   await ctx.answerCallbackQuery();
   if (ctx.from) clearSupplementMode(ctx.from.id);
-  const first = ctx.from?.first_name || 'друг';
+  const first = escapeHtml(ctx.from?.first_name || 'друг');
   const active = await activeTicketInfo(ctx.from?.id);
-  await ctx.reply(t.welcome(first), { reply_markup: mainMenuKeyboard(active) });
+  await ctx.reply(t.welcome(first), { ...HTML, reply_markup: mainMenuKeyboard(active) });
 });
 
 bot.callbackQuery('help', async (ctx) => {

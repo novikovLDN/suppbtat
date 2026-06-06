@@ -21,6 +21,7 @@ model Operator {
 
   assignedTickets Ticket[]  @relation("AssignedOperator")
   messages        Message[]
+  pushSubscriptions PushSubscription[]
 
   @@index([isActive])
 }
@@ -105,4 +106,28 @@ enum Sender {
   CUSTOMER
   OPERATOR
   SYSTEM
+}
+
+/// Web Push subscription for an operator's browser / installed PWA.
+model PushSubscription {
+  id         Int      @id @default(autoincrement())
+  operator   Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  operatorId Int
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  createdAt  DateTime @default(now())
+
+  @@index([operatorId])
+}
+
+/// Reusable canned reply ("шаблон"). Shared across operators.
+model Template {
+  id          Int      @id @default(autoincrement())
+  name        String
+  text        String   @db.Text
+  createdById Int?
+  createdAt   DateTime @default(now())
+
+  @@index([name])
 }

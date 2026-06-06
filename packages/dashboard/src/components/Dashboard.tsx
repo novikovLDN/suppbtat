@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
 import { TicketList } from './TicketList';
 import { ChatPanel } from './ChatPanel';
 import { InfoPanel } from './InfoPanel';
 import { AdminPanel } from './AdminPanel';
+import { SettingsModal } from './SettingsModal';
 
 export function Dashboard() {
   const { operator, logout } = useAuth();
   const store = useChatStore(operator!);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
 
   const hasSelection = store.selectedId !== null;
+  const { selectTicket } = store;
+
+  // Open a ticket from a push-notification tap (?ticket= or SW message).
+  useEffect(() => {
+    const param = new URLSearchParams(location.search).get('ticket');
+    if (param) {
+      const id = Number(param);
+      if (Number.isFinite(id)) selectTicket(id).catch(() => {});
+      const p = new URLSearchParams(location.search);
+      p.delete('ticket');
+      window.history.replaceState({}, '', location.pathname + (p.toString() ? `?${p}` : ''));
+    }
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'open-ticket' && e.data.ticketId) {
+        selectTicket(Number(e.data.ticketId)).catch(() => {});
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMessage);
+  }, [selectTicket]);
 
   return (
     <div className="flex h-full flex-col text-slate-100">
@@ -47,13 +69,21 @@ export function Dashboard() {
             <span className="hidden sm:inline">{store.connected ? 'Онлайн' : 'Оффлайн'}</span>
           </span>
 
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm text-slate-200 transition hover:bg-white/10 active:scale-95"
+            title="Настройки и уведомления"
+          >
+            ⚙️
+          </button>
+
           {operator!.role === 'ADMIN' && (
             <button
               onClick={() => setAdminOpen(true)}
               className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-slate-200 transition hover:bg-white/10 active:scale-95"
             >
-              <span className="sm:hidden">⚙️</span>
-              <span className="hidden sm:inline">⚙️ Операторы</span>
+              <span className="sm:hidden">👥</span>
+              <span className="hidden sm:inline">👥 Операторы</span>
             </button>
           )}
 
@@ -93,6 +123,7 @@ export function Dashboard() {
         )}
       </div>
 
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
     </div>
   );

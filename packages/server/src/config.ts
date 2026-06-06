@@ -67,6 +67,15 @@ export const config = {
   },
 
   ticketNumberOffset: int('TICKET_NUMBER_OFFSET', 13000),
+
+  push: {
+    publicKey: process.env.VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.VAPID_PRIVATE_KEY || '',
+    subject: opt('VAPID_SUBJECT', 'mailto:support@atlas-secure.app'),
+    get enabled() {
+      return Boolean(this.publicKey && this.privateKey);
+    },
+  },
 };
 
 export type Config = typeof config;

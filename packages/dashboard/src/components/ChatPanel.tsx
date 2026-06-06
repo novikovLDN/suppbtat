@@ -3,6 +3,7 @@ import type { ChatStore } from '../useChatStore';
 import type { Message } from '../types';
 import { mediaUrl } from '../api';
 import { avatarColor, customerName, initials, statusBadge, timeShort } from '../lib/format';
+import { TemplatesModal } from './TemplatesModal';
 
 interface Props {
   store: ChatStore;
@@ -172,7 +173,15 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
   const [file, setFile] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertTemplate = (tpl: string) => {
+    setText((prev) => (prev.trim() ? `${prev}\n${tpl}` : tpl));
+    setTemplatesOpen(false);
+    setTimeout(() => textRef.current?.focus(), 50);
+  };
 
   const send = async () => {
     if (sending) return;
@@ -218,6 +227,13 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
       {error && <div className="mb-2 text-xs text-rose-300">{error}</div>}
       <div className="flex items-end gap-2">
         <button
+          onClick={() => setTemplatesOpen(true)}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg text-slate-300 transition hover:bg-white/10 active:scale-95"
+          title="Шаблоны ответов"
+        >
+          ⚡
+        </button>
+        <button
           onClick={() => fileRef.current?.click()}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg text-slate-300 transition hover:bg-white/10 active:scale-95"
           title="Прикрепить фото или файл"
@@ -232,6 +248,7 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
         <textarea
+          ref={textRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -253,6 +270,10 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
           <span className={sending ? 'hidden' : 'sm:hidden'}>➤</span>
         </button>
       </div>
+
+      {templatesOpen && (
+        <TemplatesModal onClose={() => setTemplatesOpen(false)} onPick={insertTemplate} />
+      )}
     </div>
   );
 }

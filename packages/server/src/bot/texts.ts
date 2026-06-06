@@ -1,11 +1,12 @@
 import { config } from '../config.js';
 import { ticketNumber } from '../services/serializers.js';
+import { ce } from './emoji.js';
 
 const brand = config.brand.name;
 
 export const t = {
   welcome: (firstName: string) =>
-    `Привет, ${firstName} 👋\n` +
+    `Привет, ${firstName} ${ce('wave', '👋')}\n` +
     `Тебя приветствует служба поддержки ${brand}.\n\n` +
     `Чтобы мы помогли — нажми кнопку «🆘 Написать в поддержку» ниже и опиши проблему по шаблону ✅\n\n` +
     `|- Что не работает?\n` +

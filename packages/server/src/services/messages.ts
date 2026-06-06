@@ -144,13 +144,14 @@ export async function listMessages(ticketId: number, limit = 200) {
 
 /**
  * Send a plain notification to a customer's chat (e.g. "operator joined",
- * "ticket closed"). Best-effort; failures are logged, not thrown.
+ * "ticket closed"). Best-effort; failures are logged, not thrown. Uses HTML so
+ * formatting tags (<b>, <tg-emoji>) render instead of leaking as text.
  */
 export async function notifyCustomer(ticketId: number, text: string) {
   const ticket = await getTicketById(ticketId);
   if (!ticket) return;
   try {
-    await bot.api.sendMessage(ticket.customer.id.toString(), text);
+    await bot.api.sendMessage(ticket.customer.id.toString(), text, { parse_mode: 'HTML' });
   } catch (err) {
     logger.warn('notifyCustomer failed', err);
   }

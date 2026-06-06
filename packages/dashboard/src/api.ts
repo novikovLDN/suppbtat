@@ -1,4 +1,4 @@
-import type { Counts, Message, Operator, Scope, Ticket } from './types';
+import type { Counts, Message, Operator, Scope, Template, Ticket } from './types';
 
 const TOKEN_KEY = 'atlas_token';
 
@@ -78,6 +78,19 @@ export const api = {
     if (file) fd.append('file', file);
     return request<{ message: Message }>(`/api/tickets/${id}/messages`, { method: 'POST', body: fd });
   },
+
+  // Web Push
+  getVapid: () => request<{ publicKey: string; enabled: boolean }>('/api/push/vapid'),
+  pushSubscribe: (subscription: unknown) =>
+    request<{ ok: true }>('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription }) }),
+  pushUnsubscribe: (endpoint: string) =>
+    request<{ ok: true }>('/api/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+
+  // Templates (canned replies)
+  listTemplates: () => request<{ templates: Template[] }>('/api/templates'),
+  createTemplate: (name: string, text: string) =>
+    request<{ template: Template }>('/api/templates', { method: 'POST', body: JSON.stringify({ name, text }) }),
+  deleteTemplate: (id: number) => request<{ ok: true }>(`/api/templates/${id}`, { method: 'DELETE' }),
 
   listOperators: () => request<{ operators: Operator[] }>('/api/operators'),
   createOperator: (data: { username: string; password: string; displayName: string; role: string }) =>

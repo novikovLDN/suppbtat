@@ -1,0 +1,125 @@
+import { useEffect, useState } from 'react';
+import {
+  disablePush,
+  enablePush,
+  getActiveSubscription,
+  isIOS,
+  isStandalone,
+  pushBlockedReason,
+} from '../lib/push';
+
+export function SettingsModal({ onClose }: { onClose: () => void }) {
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [checked, setChecked] = useState(false);
+
+  const blocked = pushBlockedReason();
+  const needsInstall = isIOS() && !isStandalone();
+
+  useEffect(() => {
+    getActiveSubscription()
+      .then((s) => setEnabled(!!s))
+      .finally(() => setChecked(true));
+  }, []);
+
+  const toggle = async () => {
+    if (busy) return;
+    setError('');
+    setBusy(true);
+    try {
+      if (enabled) {
+        await disablePush();
+        setEnabled(false);
+      } else {
+        await enablePush();
+        setEnabled(true);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось изменить настройку');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="glass animate-slide-up flex w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 shadow-2xl sm:max-w-md sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
+          <h2 className="text-sm font-semibold">⚙️ Настройки</h2>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/10"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          {/* Notifications toggle */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-medium">🔔 Push-уведомления</div>
+                <p className="mt-1 text-xs text-slate-400">
+                  Мгновенное уведомление на телефон, когда появляется новый тикет.
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={enabled}
+                disabled={busy || !!blocked || !checked}
+                onClick={toggle}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40 ${
+                  enabled ? 'bg-gradient-to-r from-indigo-500 to-violet-600' : 'bg-white/15'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${
+                    enabled ? 'left-[22px]' : 'left-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {needsInstall && (
+              <div className="mt-3 rounded-xl bg-amber-400/10 px-3 py-2 text-xs text-amber-200 ring-1 ring-inset ring-amber-400/20">
+                📲 На iPhone: откройте «Поделиться» → «На экран „Домой“», запустите приложение с
+                иконки — и включите уведомления уже там.
+              </div>
+            )}
+            {!needsInstall && blocked && (
+              <div className="mt-3 rounded-xl bg-slate-500/10 px-3 py-2 text-xs text-slate-300 ring-1 ring-inset ring-white/10">
+                {blocked}
+              </div>
+            )}
+            {error && (
+              <div className="mt-3 rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-300 ring-1 ring-inset ring-rose-500/20">
+                {error}
+              </div>
+            )}
+            {enabled && !error && (
+              <div className="mt-3 text-xs text-emerald-300">✓ Уведомления включены на этом устройстве</div>
+            )}
+          </div>
+
+          {/* PWA hint */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-slate-400">
+            <div className="mb-1 text-sm font-medium text-slate-200">📱 Установка приложения</div>
+            Добавьте дашборд на экран «Домой» — он откроется как отдельное приложение на весь экран,
+            без адресной строки.
+            <div className="mt-2 text-slate-500">
+              iOS: Safari → «Поделиться» → «На экран „Домой“». Android: меню → «Установить приложение».
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

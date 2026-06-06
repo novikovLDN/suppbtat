@@ -5,6 +5,7 @@ import { ensureAdmin } from './bootstrap.js';
 import { buildServer } from './api/server.js';
 import { bot } from './bot/instance.js';
 import { registerBotHandlers, setBotCommands } from './bot/handlers.js';
+import { initPush } from './services/push.js';
 
 async function main() {
   logger.info(`Starting ${config.brand.name} support service (${config.nodeEnv})`);
@@ -12,6 +13,9 @@ async function main() {
   // 1. DB ready + bootstrap admin
   await prisma.$connect();
   await ensureAdmin();
+
+  // Web Push (immediate operator notifications on new tickets)
+  initPush();
 
   // 2. HTTP + WebSocket API (also serves the dashboard)
   registerBotHandlers();

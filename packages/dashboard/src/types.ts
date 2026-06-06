@@ -52,6 +52,13 @@ export interface Counts {
   open: number;
 }
 
+export interface Template {
+  id: number;
+  name: string;
+  text: string;
+  createdAt?: string;
+}
+
 export type Scope = 'all' | 'unassigned' | 'mine' | 'closed';
 
 export type WsEvent =
