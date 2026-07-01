@@ -4,7 +4,7 @@ import type { Operator } from '../types';
 import { dateTime } from '../lib/format';
 
 const inputCls =
-  'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20';
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10';
 
 export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -55,14 +55,14 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="glass animate-slide-up flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 shadow-2xl sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl"
+        className="animate-slide-up flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[85vh] sm:max-w-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
-          <h2 className="text-sm font-semibold">⚙️ Управление операторами</h2>
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h2 className="text-sm font-semibold text-slate-900">👥 Управление операторами</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/10"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100"
           >
             ✕
           </button>
@@ -71,9 +71,9 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         <div className="overflow-y-auto p-4 sm:p-5">
           <form
             onSubmit={create}
-            className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2"
+            className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:grid-cols-2"
           >
-            <div className="text-xs font-medium text-slate-400 sm:col-span-2">Новый оператор</div>
+            <div className="text-xs font-semibold text-slate-500 sm:col-span-2">Новый оператор</div>
             <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Логин" className={inputCls} />
             <input
               value={displayName}
@@ -95,49 +95,49 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={creating || !username || !displayName || password.length < 6}
-              className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-500 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none sm:col-span-2"
+              className="rounded-xl bg-[#2563eb] py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition hover:bg-[#1d4ed8] active:scale-[0.98] disabled:opacity-50 disabled:shadow-none sm:col-span-2"
             >
               {creating ? 'Создание…' : 'Создать оператора'}
             </button>
           </form>
 
           {error && (
-            <div className="mb-3 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-300 ring-1 ring-inset ring-rose-500/20">
+            <div className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600 ring-1 ring-inset ring-rose-100">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="text-center text-sm text-slate-500">Загрузка…</div>
+            <div className="text-center text-sm text-slate-400">Загрузка…</div>
           ) : (
             <div className="space-y-2">
               {operators.map((op) => (
                 <div
                   key={op.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="truncate font-medium">{op.displayName}</span>
+                      <span className="truncate font-semibold text-slate-800">{op.displayName}</span>
                       <span
-                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] ${
+                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
                           op.role === 'ADMIN'
-                            ? 'bg-violet-500/20 text-violet-300'
-                            : 'bg-white/10 text-slate-300'
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'bg-slate-200 text-slate-500'
                         }`}
                       >
                         {op.role === 'ADMIN' ? 'Админ' : 'Оператор'}
                       </span>
-                      {!op.isActive && <span className="shrink-0 text-[10px] text-rose-400">отключён</span>}
+                      {!op.isActive && <span className="shrink-0 text-[10px] text-rose-500">отключён</span>}
                     </div>
-                    <div className="truncate text-xs text-slate-500">
+                    <div className="truncate text-xs text-slate-400">
                       @{op.username}
                       {op.lastSeenAt ? ` · был(а) ${dateTime(op.lastSeenAt)}` : ''}
                     </div>
                   </div>
                   <button
                     onClick={() => toggleActive(op)}
-                    className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 transition hover:bg-white/10 active:scale-95"
+                    className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 active:scale-95"
                   >
                     {op.isActive ? 'Отключить' : 'Включить'}
                   </button>

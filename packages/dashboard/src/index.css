@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html,
@@ -19,42 +19,52 @@ body,
 }
 
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+  font-family: 'Jost', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
-  color: #e8edf7;
-  /* layered aurora glows over a deep space-slate base — the 2026 vibe */
+  color: #0f172a;
+  /* soft, airy light background with faint tech tint */
   background:
-    radial-gradient(1200px 620px at 100% -8%, rgba(99, 102, 241, 0.18), transparent 60%),
-    radial-gradient(1000px 700px at -8% 112%, rgba(168, 85, 247, 0.14), transparent 55%),
-    radial-gradient(900px 500px at 50% 50%, rgba(56, 189, 248, 0.05), transparent 60%),
-    #060912;
+    radial-gradient(1100px 620px at 100% -10%, rgba(37, 99, 235, 0.06), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(99, 102, 241, 0.05), transparent 55%),
+    linear-gradient(180deg, #eef1f6 0%, #f4f6fa 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
 }
 
 /* thin, subtle scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+  scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
 }
 *::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.22);
+  background: rgba(100, 116, 139, 0.22);
   border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(100, 116, 139, 0.4);
 }
 
 @layer utilities {
-  .glass {
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+  /* Floating white panel — the core "parящая" surface */
+  .panel {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow:
+      0 1px 2px rgba(2, 6, 23, 0.04),
+      0 18px 50px -24px rgba(15, 23, 42, 0.28);
+  }
+  .panel-soft {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    box-shadow:
+      0 1px 2px rgba(2, 6, 23, 0.03),
+      0 10px 30px -18px rgba(15, 23, 42, 0.22);
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -91,7 +101,7 @@ body {
   }
 }
 .animate-slide-up {
-  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes slideInRight {
@@ -105,7 +115,7 @@ body {
   }
 }
 .animate-slide-in-right {
-  animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes pulseGlow {
@@ -114,7 +124,7 @@ body {
     opacity: 1;
   }
   50% {
-    opacity: 0.45;
+    opacity: 0.4;
   }
 }
 .animate-pulse-glow {

@@ -44,33 +44,31 @@ export function Dashboard() {
   }, [selectTicket]);
 
   return (
-    <div className="flex h-full flex-col text-slate-100">
+    <div className="flex h-full flex-col p-2 text-slate-900 sm:p-3">
       {/* Header */}
-      <header className="glass z-20 flex h-14 shrink-0 items-center justify-between border-b border-white/5 px-3 sm:px-4">
+      <header className="panel z-20 mb-2 flex h-16 shrink-0 items-center justify-between rounded-2xl px-3 sm:mb-3 sm:px-5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-lg shadow-lg shadow-indigo-500/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#2563eb] text-lg text-white shadow-lg shadow-blue-500/30">
             🛡️
           </div>
           <div className="leading-tight">
-            <div className="text-sm font-semibold tracking-tight">Atlas&nbsp;Secure</div>
+            <div className="text-[15px] font-semibold tracking-tight">Atlas&nbsp;Secure</div>
             <div className="hidden text-[11px] text-slate-400 sm:block">Панель поддержки</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           <span
-            className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium ring-1 ring-inset transition ${
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium ring-1 ring-inset transition ${
               store.connected
-                ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25'
-                : 'bg-rose-400/10 text-rose-300 ring-rose-400/25'
+                ? 'bg-emerald-50 text-emerald-600 ring-emerald-200'
+                : 'bg-rose-50 text-rose-600 ring-rose-200'
             }`}
             title={store.connected ? 'Соединение активно' : 'Переподключение…'}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                store.connected
-                  ? 'bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.6)]'
-                  : 'animate-pulse-glow bg-rose-400'
+                store.connected ? 'bg-emerald-500' : 'animate-pulse-glow bg-rose-500'
               }`}
             />
             <span className="hidden sm:inline">{store.connected ? 'Онлайн' : 'Оффлайн'}</span>
@@ -78,7 +76,7 @@ export function Dashboard() {
 
           <button
             onClick={() => setSettingsOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm text-slate-200 transition hover:bg-white/10 active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm text-slate-600 transition hover:bg-slate-100 active:scale-95"
             title="Настройки и уведомления"
           >
             ⚙️
@@ -87,23 +85,25 @@ export function Dashboard() {
           {operator!.role === 'ADMIN' && (
             <button
               onClick={() => setAdminOpen(true)}
-              className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-slate-200 transition hover:bg-white/10 active:scale-95"
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 active:scale-95"
             >
               <span className="sm:hidden">👥</span>
               <span className="hidden sm:inline">👥 Операторы</span>
             </button>
           )}
 
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold shadow-md shadow-indigo-500/25">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-1 md:pr-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563eb] text-xs font-semibold text-white">
               {operator!.displayName.slice(0, 1).toUpperCase()}
             </div>
-            <span className="hidden text-xs text-slate-300 md:inline">{operator!.displayName}</span>
+            <span className="hidden text-xs font-medium text-slate-600 md:inline">
+              {operator!.displayName}
+            </span>
           </div>
 
           <button
             onClick={logout}
-            className="rounded-xl px-2 py-1.5 text-xs text-slate-400 transition hover:text-rose-300"
+            className="rounded-full px-2 py-2 text-xs text-slate-400 transition hover:text-rose-500"
             title="Выйти"
           >
             <span className="md:hidden">⎋</span>
@@ -112,8 +112,8 @@ export function Dashboard() {
         </div>
       </header>
 
-      {/* Body */}
-      <div className="relative flex min-h-0 flex-1">
+      {/* Body — floating panels with gaps */}
+      <div className="relative flex min-h-0 flex-1 gap-2 sm:gap-3">
         <TicketList store={store} className={hasSelection ? 'hidden lg:flex' : 'flex'} />
         <ChatPanel
           store={store}
