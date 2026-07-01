@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Info, Zap, Paperclip, Send, Lock, Drama, MessageSquare, FileText, X } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Message } from '../types';
 import { mediaUrl } from '../api';
 import { avatarColor, customerName, initials, statusBadge, timeShort } from '../lib/format';
 import { TemplatesModal } from './TemplatesModal';
+import { Lightbox } from './Lightbox';
 
 interface Props {
   store: ChatStore;
@@ -17,6 +19,7 @@ interface Props {
 export function ChatPanel({ store, operatorId, persona, className = '', onBack, onToggleInfo }: Props) {
   const { selected, messages } = store;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -25,8 +28,8 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
   if (!selected) {
     return (
       <main className={`panel flex-1 items-center justify-center rounded-[26px] ${className}`}>
-        <div className="text-center text-slate-500">
-          <div className="mb-3 text-5xl opacity-30">💬</div>
+        <div className="flex flex-col items-center text-slate-600">
+          <MessageSquare size={44} strokeWidth={1.25} className="mb-3 opacity-40" />
           <div className="text-sm">Выберите тикет, чтобы начать переписку</div>
         </div>
       </main>
@@ -48,7 +51,7 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/[0.06] active:scale-95 lg:hidden"
             title="Назад к списку"
           >
-            ←
+            <ArrowLeft size={18} />
           </button>
         )}
         <div
@@ -76,11 +79,12 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
           </div>
         </div>
         <span
-          className="hidden shrink-0 items-center gap-1 rounded-full bg-indigo-500/15 px-2.5 py-1 text-[11px] font-medium text-indigo-300 ring-1 ring-inset ring-indigo-400/20 sm:flex"
+          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-indigo-500/15 px-2.5 py-1 text-[11px] font-medium text-indigo-300 ring-1 ring-inset ring-indigo-400/20 sm:flex"
           title={personaLocked ? 'Имя для клиента (закреплено)' : 'Имя для клиента при взятии в работу'}
         >
-          🎭 <span className="max-w-[130px] truncate">{personaLabel}</span>
-          {personaLocked && <span className="opacity-60">🔒</span>}
+          <Drama size={12} />
+          <span className="max-w-[130px] truncate">{personaLabel}</span>
+          {personaLocked && <Lock size={10} className="opacity-70" />}
         </span>
         {onToggleInfo && (
           <button
@@ -88,7 +92,7 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/[0.06] active:scale-95 xl:hidden"
             title="Информация"
           >
-            ⓘ
+            <Info size={18} />
           </button>
         )}
       </div>
@@ -96,16 +100,31 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
       {/* Messages */}
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-4 sm:px-5">
         {messages.map((m) => (
-          <MessageBubble key={m.id} m={m} mine={m.operatorId === operatorId} />
+          <MessageBubble
+            key={m.id}
+            m={m}
+            mine={m.operatorId === operatorId}
+            onOpenImage={setLightbox}
+          />
         ))}
       </div>
 
       <Composer store={store} disabled={closed} />
+
+      {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
     </main>
   );
 }
 
-function MessageBubble({ m, mine }: { m: Message; mine: boolean }) {
+function MessageBubble({
+  m,
+  mine,
+  onOpenImage,
+}: {
+  m: Message;
+  mine: boolean;
+  onOpenImage: (url: string) => void;
+}) {
   if (m.sender === 'SYSTEM') {
     return (
       <div className="flex animate-fade-in justify-center py-1">
@@ -133,25 +152,26 @@ function MessageBubble({ m, mine }: { m: Message; mine: boolean }) {
         )}
 
         {m.mediaType === 'photo' && m.mediaFileId && (
-          <a href={mediaUrl(m.mediaFileId)} target="_blank" rel="noreferrer">
+          <button onClick={() => onOpenImage(mediaUrl(m.mediaFileId!))} className="block">
             <img
               src={mediaUrl(m.mediaFileId)}
               alt="вложение"
-              className="mb-1 max-h-64 rounded-xl object-cover"
+              className="mb-1 max-h-64 cursor-zoom-in rounded-xl object-cover"
               loading="lazy"
             />
-          </a>
+          </button>
         )}
         {m.mediaType && m.mediaType !== 'photo' && m.mediaFileId && (
           <a
             href={mediaUrl(m.mediaFileId)}
             target="_blank"
             rel="noreferrer"
-            className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs underline ${
+            className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
               fromOperator ? 'bg-black/20' : 'bg-white/10'
             }`}
           >
-            📎 {m.fileName || mediaLabel(m.mediaType)}
+            <FileText size={14} />
+            {m.fileName || mediaLabel(m.mediaType)}
           </a>
         )}
 
@@ -217,7 +237,9 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
   if (disabled) {
     return (
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] px-4 py-3">
-        <span className="text-xs text-slate-500">🔒 Тикет закрыт. Переоткройте, чтобы продолжить.</span>
+        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+          <Lock size={13} /> Тикет закрыт. Переоткройте, чтобы продолжить.
+        </span>
         <button
           onClick={() => store.reopen()}
           className="tile tile-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-200 transition active:scale-95"
@@ -232,9 +254,11 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
     <div className="shrink-0 border-t border-white/[0.06] px-3 py-3 sm:px-4">
       {file && (
         <div className="mb-2 flex items-center gap-2 text-xs text-slate-400">
-          <span className="tile rounded-lg px-2 py-1">📎 {file.name}</span>
+          <span className="tile flex items-center gap-1.5 rounded-lg px-2 py-1">
+            <Paperclip size={12} /> {file.name}
+          </span>
           <button onClick={() => setFile(null)} className="text-slate-500 hover:text-rose-400">
-            убрать
+            <X size={14} />
           </button>
         </div>
       )}
@@ -242,17 +266,17 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
       <div className="flex items-end gap-2">
         <button
           onClick={() => setTemplatesOpen(true)}
-          className="tile tile-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-slate-300 transition active:scale-95"
+          className="tile tile-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
           title="Шаблоны ответов"
         >
-          ⚡
+          <Zap size={18} />
         </button>
         <button
           onClick={() => fileRef.current?.click()}
-          className="tile tile-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-slate-300 transition active:scale-95"
+          className="tile tile-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
           title="Прикрепить фото или файл"
         >
-          📎
+          <Paperclip size={18} />
         </button>
         <input
           ref={fileRef}
@@ -278,10 +302,10 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
         <button
           onClick={send}
           disabled={sending || (!text.trim() && !file)}
-          className="accent flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-white transition active:scale-95 disabled:opacity-40"
+          className="accent flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition active:scale-95 disabled:opacity-40 sm:w-auto sm:px-4"
         >
-          {sending ? '…' : <span className="hidden sm:inline">Отправить</span>}
-          <span className={sending ? 'hidden' : 'sm:hidden'}>➤</span>
+          <span className="hidden sm:inline">{sending ? 'Отправка…' : 'Отправить'}</span>
+          <Send size={18} className="sm:hidden" />
         </button>
       </div>
 

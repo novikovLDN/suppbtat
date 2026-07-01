@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Shield, Settings, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
 import { getPersona, setPersona as savePersona } from '../lib/personas';
@@ -48,8 +49,8 @@ export function Dashboard() {
       {/* Header */}
       <header className="panel z-20 mb-2 flex h-16 shrink-0 items-center justify-between rounded-[26px] px-3 sm:mb-3 sm:px-5">
         <div className="flex items-center gap-2.5">
-          <div className="accent flex h-10 w-10 items-center justify-center rounded-2xl text-lg text-white">
-            🛡️
+          <div className="accent flex h-10 w-10 items-center justify-center rounded-2xl text-white">
+            <Shield size={20} strokeWidth={2} />
           </div>
           <div className="leading-tight">
             <div className="text-[15px] font-semibold tracking-tight text-white">Atlas&nbsp;Secure</div>
@@ -76,19 +77,20 @@ export function Dashboard() {
 
           <button
             onClick={() => setSettingsOpen(true)}
-            className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-sm text-slate-300 transition active:scale-95"
+            className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
             title="Настройки и уведомления"
           >
-            ⚙️
+            <Settings size={17} />
           </button>
 
           {operator!.role === 'ADMIN' && (
             <button
               onClick={() => setAdminOpen(true)}
-              className="tile tile-hover rounded-full px-3 py-2 text-xs font-medium text-slate-300 transition active:scale-95"
+              className="tile tile-hover flex items-center gap-1.5 rounded-full px-2.5 py-2 text-xs font-medium text-slate-300 transition active:scale-95"
+              title="Операторы"
             >
-              <span className="sm:hidden">👥</span>
-              <span className="hidden sm:inline">👥 Операторы</span>
+              <Users size={16} />
+              <span className="hidden sm:inline">Операторы</span>
             </button>
           )}
 
@@ -103,11 +105,10 @@ export function Dashboard() {
 
           <button
             onClick={logout}
-            className="rounded-full px-2 py-2 text-xs text-slate-500 transition hover:text-rose-400"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06] hover:text-rose-400"
             title="Выйти"
           >
-            <span className="md:hidden">⎋</span>
-            <span className="hidden md:inline">Выход</span>
+            <LogOut size={17} />
           </button>
         </div>
       </header>

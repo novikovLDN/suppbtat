@@ -1,3 +1,4 @@
+import { Search, User, Inbox } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Scope } from '../types';
 import { avatarColor, customerName, initials, relativeDay, statusBadge } from '../lib/format';
@@ -17,14 +18,15 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
       {/* Search + tabs */}
       <div className="border-b border-white/[0.06] p-3">
         <div className="relative">
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-            🔍
-          </span>
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+          />
           <input
             value={store.search}
             onChange={(e) => store.setSearch(e.target.value)}
             placeholder="Поиск: #номер, имя, @username"
-            className="tile w-full rounded-full py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
+            className="tile w-full rounded-full py-2.5 pl-9 pr-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
           />
         </div>
 
@@ -62,8 +64,8 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
           <div className="p-6 text-center text-xs text-slate-500">Загрузка…</div>
         )}
         {!store.loadingList && store.tickets.length === 0 && (
-          <div className="p-10 text-center text-sm text-slate-500">
-            <div className="mb-2 text-3xl opacity-40">📭</div>
+          <div className="flex flex-col items-center p-10 text-center text-sm text-slate-500">
+            <Inbox size={32} strokeWidth={1.25} className="mb-2 opacity-40" />
             Нет тикетов в этой вкладке
           </div>
         )}
@@ -116,8 +118,8 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
                   )}
                 </div>
                 {t.assignedOperatorName && t.status === 'OPEN' && (
-                  <div className="mt-1 truncate text-[10px] text-slate-500">
-                    👤 {t.assignedOperatorName}
+                  <div className="mt-1 flex items-center gap-1 truncate text-[10px] text-slate-500">
+                    <User size={10} /> {t.assignedOperatorName}
                   </div>
                 )}
               </div>

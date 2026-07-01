@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X, Users } from 'lucide-react';
 import { api } from '../api';
 import type { Operator } from '../types';
 import { dateTime } from '../lib/format';
@@ -55,16 +56,18 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="panel animate-slide-up flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[85vh] sm:max-w-2xl sm:rounded-3xl"
+        className="panel animate-slide-up flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[85dvh] sm:max-w-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="text-sm font-semibold text-white">👥 Управление операторами</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Users size={16} /> Управление операторами
+          </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.06]"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
 
@@ -137,7 +140,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                   </div>
                   <button
                     onClick={() => toggleActive(op)}
-                    className="tile tile-hover shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition active:scale-95"
+                    className="tile tile-hover shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-slate-200 transition active:scale-95"
                   >
                     {op.isActive ? 'Отключить' : 'Включить'}
                   </button>

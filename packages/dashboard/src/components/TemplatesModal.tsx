@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X, Plus, Trash2, Zap } from 'lucide-react';
 import { api } from '../api';
 import type { Template } from '../types';
 
@@ -57,23 +58,25 @@ export function TemplatesModal({
       onClick={onClose}
     >
       <div
-        className="panel animate-slide-up flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[80vh] sm:max-w-lg sm:rounded-3xl"
+        className="panel animate-slide-up flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[80dvh] sm:max-w-lg sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="text-sm font-semibold text-white">⚡ Шаблоны ответов</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Zap size={16} className="text-indigo-300" /> Шаблоны ответов
+          </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAdding((v) => !v)}
-              className="tile tile-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition"
+              className="tile tile-hover flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-slate-200 transition"
             >
-              {adding ? 'Отмена' : '+ Новый'}
+              {adding ? 'Отмена' : (<><Plus size={14} /> Новый</>)}
             </button>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06]"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.06]"
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -114,16 +117,16 @@ export function TemplatesModal({
           {loading ? (
             <div className="py-6 text-center text-sm text-slate-400">Загрузка…</div>
           ) : templates.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-400">
-              <div className="mb-2 text-3xl opacity-50">⚡</div>
-              Пока нет шаблонов. Нажмите «+ Новый», чтобы добавить.
+            <div className="flex flex-col items-center py-8 text-center text-sm text-slate-400">
+              <Zap size={30} strokeWidth={1.25} className="mb-2 opacity-40" />
+              Пока нет шаблонов. Нажмите «Новый», чтобы добавить.
             </div>
           ) : (
             <div className="space-y-2">
               {templates.map((tpl) => (
                 <div
                   key={tpl.id}
-                  className="group flex items-start gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-blue-300/50 hover:bg-blue-500/10"
+                  className="group flex items-start gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-indigo-400/30 hover:bg-indigo-500/10"
                 >
                   <button onClick={() => onPick(tpl.text)} className="min-w-0 flex-1 text-left">
                     <div className="mb-0.5 text-sm font-semibold text-slate-100">{tpl.name}</div>
@@ -138,10 +141,10 @@ export function TemplatesModal({
                   </button>
                   <button
                     onClick={() => remove(tpl.id)}
-                    className="shrink-0 rounded-full px-2 py-1.5 text-xs text-slate-400 transition hover:text-rose-500"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.06] hover:text-rose-400"
                     title="Удалить"
                   >
-                    🗑
+                    <Trash2 size={15} />
                   </button>
                 </div>
               ))}

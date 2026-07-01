@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X, Settings, Bell, Drama, Smartphone, Check, Share } from 'lucide-react';
 import { api } from '../api';
 import { OPERATOR_PERSONAS } from '../lib/personas';
 import {
@@ -81,12 +82,14 @@ export function SettingsModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="text-sm font-semibold text-white">⚙️ Настройки</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Settings size={16} /> Настройки
+          </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.06]"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
 
@@ -94,7 +97,7 @@ export function SettingsModal({
           {/* Operator persona */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-              🎭 Имя оператора для клиента
+              <Drama size={16} className="text-slate-400" /> Имя оператора для клиента
             </div>
             <p className="mt-1 text-xs text-slate-400">
               Под этим именем клиент увидит, кто взял его чат в работу. «Случайно» — берётся
@@ -119,7 +122,7 @@ export function SettingsModal({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-                  🔔 Push-уведомления
+                  <Bell size={16} className="text-slate-400" /> Push-уведомления
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
                   Мгновенное уведомление на телефон при новом сообщении клиента.
@@ -143,9 +146,12 @@ export function SettingsModal({
             </div>
 
             {needsInstall && (
-              <div className="mt-3 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-300 ring-1 ring-inset ring-amber-500/20">
-                📲 На iPhone: откройте «Поделиться» → «На экран „Домой“», запустите приложение с
-                иконки — и включите уведомления уже там.
+              <div className="mt-3 flex gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-300 ring-1 ring-inset ring-amber-500/20">
+                <Share size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  На iPhone: откройте «Поделиться» → «На экран „Домой“», запустите приложение с
+                  иконки — и включите уведомления уже там.
+                </span>
               </div>
             )}
             {!needsInstall && blocked && (
@@ -160,22 +166,26 @@ export function SettingsModal({
             )}
             {enabled && (
               <div className="mt-3 flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-emerald-600">✓ Включены на этом устройстве</span>
+                <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
+                  <Check size={13} /> Включены на этом устройстве
+                </span>
                 <button
                   onClick={sendTest}
                   disabled={testing}
-                  className="tile tile-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition disabled:opacity-50"
+                  className="tile tile-hover flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-slate-200 transition disabled:opacity-50"
                 >
-                  {testing ? 'Отправка…' : '🔔 Тест уведомления'}
+                  <Bell size={13} /> {testing ? 'Отправка…' : 'Тест'}
                 </button>
               </div>
             )}
-            {testMsg && <div className="mt-2 text-xs font-medium text-emerald-600">{testMsg}</div>}
+            {testMsg && <div className="mt-2 text-xs font-medium text-emerald-400">{testMsg}</div>}
           </div>
 
           {/* PWA hint */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 text-xs text-slate-400">
-            <div className="mb-1 text-sm font-semibold text-slate-100">📱 Установка приложения</div>
+            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-100">
+              <Smartphone size={16} className="text-slate-400" /> Установка приложения
+            </div>
             Добавьте дашборд на экран «Домой» — он откроется как отдельное приложение на весь экран,
             без адресной строки.
             <div className="mt-2 text-slate-400">

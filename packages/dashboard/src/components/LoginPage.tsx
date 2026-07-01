@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Shield } from 'lucide-react';
 import { useAuth } from '../store';
 
 export function LoginPage() {
@@ -28,8 +29,8 @@ export function LoginPage() {
     <div className="flex h-full items-center justify-center px-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <div className="accent mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] text-3xl text-white">
-            🛡️
+          <div className="accent mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] text-white">
+            <Shield size={30} strokeWidth={2} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">Atlas Secure</h1>
           <p className="label mt-1.5 text-[10px] text-slate-500">Панель поддержки</p>
