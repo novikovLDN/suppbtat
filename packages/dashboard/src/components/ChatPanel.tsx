@@ -40,10 +40,15 @@ export function applyVars(text: string, ticket: Ticket | null): string {
 export function ChatPanel({ store, operatorId, persona, className = '', onBack, onToggleInfo }: Props) {
   const { selected, messages } = store;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevIdRef = useRef<number | undefined>(undefined);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    const el = scrollRef.current;
+    if (!el) return;
+    const switched = prevIdRef.current !== selected?.id;
+    prevIdRef.current = selected?.id;
+    el.scrollTo({ top: el.scrollHeight, behavior: switched ? 'auto' : 'smooth' });
   }, [messages, selected?.id]);
 
   if (!selected) {

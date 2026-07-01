@@ -102,9 +102,18 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
 
       {/* List */}
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
-        {store.loadingList && store.tickets.length === 0 && (
-          <div className="p-6 text-center text-xs text-slate-500">Загрузка…</div>
-        )}
+        {store.loadingList &&
+          store.tickets.length === 0 &&
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="mb-1 flex items-start gap-3 px-3 py-3">
+              <div className="skeleton h-11 w-11 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-2 py-1">
+                <div className="skeleton h-3 w-1/2 rounded" />
+                <div className="skeleton h-2.5 w-1/3 rounded" />
+                <div className="skeleton h-2.5 w-3/4 rounded" />
+              </div>
+            </div>
+          ))}
         {!store.loadingList && store.tickets.length === 0 && (
           <div className="flex flex-col items-center p-10 text-center text-sm text-slate-500">
             <Inbox size={32} strokeWidth={1.25} className="mb-2 opacity-40" />
@@ -121,8 +130,10 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
             <button
               key={t.id}
               onClick={() => store.selectTicket(t.id)}
-              className={`group mb-1 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition ${
-                selected ? 'bg-white/[0.07] ring-1 ring-inset ring-white/10' : 'hover:bg-white/[0.04]'
+              className={`group mb-1 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 ${
+                selected
+                  ? 'bg-white/[0.07] ring-1 ring-inset ring-white/10'
+                  : 'hover:bg-white/[0.04] active:scale-[0.99]'
               }`}
             >
               <div

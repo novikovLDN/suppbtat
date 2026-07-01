@@ -24,7 +24,7 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 pb-safe backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 pb-safe backdrop-blur-sm animate-overlay sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
@@ -58,7 +58,7 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
           ) : error ? (
             <div className="rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</div>
           ) : stats ? (
-            <div className="space-y-5">
+            <div className="animate-fade-in space-y-5">
               {/* KPI cards */}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <Kpi label="Открыто" value={stats.open} />
@@ -80,7 +80,7 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
                     <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                       <div className="flex w-full flex-1 items-end">
                         <div
-                          className="accent w-full rounded-md"
+                          className="accent w-full rounded-md transition-[height] duration-500 ease-out"
                           style={{ height: `${(d.count / maxDay) * 100}%`, minHeight: d.count ? 6 : 0 }}
                           title={`${d.count}`}
                         />
@@ -101,7 +101,7 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
                     <div key={o.id} className="flex items-center gap-3 text-xs">
                       <span className="w-28 shrink-0 truncate text-slate-200">{o.name}</span>
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-                        <div className="accent h-full rounded-full" style={{ width: `${(o.replies7d / maxRep) * 100}%` }} />
+                        <div className="accent h-full rounded-full transition-[width] duration-500 ease-out" style={{ width: `${(o.replies7d / maxRep) * 100}%` }} />
                       </div>
                       <span className="w-20 shrink-0 text-right text-slate-400">
                         {o.replies7d} · <span className="text-slate-500">в работе {o.active}</span>

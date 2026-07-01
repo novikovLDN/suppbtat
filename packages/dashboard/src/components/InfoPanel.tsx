@@ -47,7 +47,7 @@ export function InfoPanel({ store, variant, persona, operators, onClose }: Props
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end xl:hidden" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-overlay" />
       <aside
         className="panel animate-slide-in-right relative flex h-full w-[88%] max-w-sm flex-col overflow-y-auto rounded-none"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}

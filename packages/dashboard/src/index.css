@@ -98,11 +98,17 @@ body {
   }
 }
 
-/* entrance + micro animations */
+/* ── entrance + micro animations ────────────────────────────
+   Shared smooth easing curves for a consistent, polished feel. */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* soft overshoot-free ease-out */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px) scale(0.985);
   }
   to {
     opacity: 1;
@@ -110,8 +116,23 @@ body {
   }
 }
 .animate-fade-in {
-  animation: fadeIn 0.22s ease-out both;
+  animation: fadeIn 0.28s var(--ease-out) both;
 }
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-scale-in {
+  animation: scaleIn 0.28s var(--ease-out) both;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -123,8 +144,9 @@ body {
   }
 }
 .animate-slide-up {
-  animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideUp 0.4s var(--ease-spring) both;
 }
+
 @keyframes slideInRight {
   from {
     opacity: 0;
@@ -136,8 +158,38 @@ body {
   }
 }
 .animate-slide-in-right {
-  animation: slideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideInRight 0.36s var(--ease-spring) both;
 }
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-overlay {
+  animation: overlayIn 0.2s ease-out both;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-pop {
+  animation: pop 0.32s var(--ease-out) both;
+}
+
 @keyframes pulseGlow {
   0%,
   100% {
@@ -149,4 +201,49 @@ body {
 }
 .animate-pulse-glow {
   animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* shimmer skeleton for loading states */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+/* Smooth, consistent interactive transitions on common controls */
+button,
+a,
+input,
+textarea,
+select {
+  transition-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
