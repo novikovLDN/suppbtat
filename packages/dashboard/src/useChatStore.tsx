@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, wsUrl } from './api';
-import type { Counts, Message, Operator, Scope, Ticket, WsEvent } from './types';
+import { playChime } from './lib/sound';
+import type { Counts, Message, Operator, Priority, Scope, SortMode, Ticket, WsEvent } from './types';
 
 function scopeMatches(t: Ticket, scope: Scope, operatorId: number): boolean {
   switch (scope) {
@@ -16,46 +17,66 @@ function scopeMatches(t: Ticket, scope: Scope, operatorId: number): boolean {
   }
 }
 
-function sortTickets(list: Ticket[]): Ticket[] {
-  return [...list].sort((a, b) => +new Date(b.lastMessageAt) - +new Date(a.lastMessageAt));
+function sortTickets(list: Ticket[], sort: SortMode): Ticket[] {
+  const copy = [...list];
+  if (sort === 'waiting') {
+    return copy.sort((a, b) => {
+      const aw = a.firstWaitingAt ? new Date(a.firstWaitingAt).getTime() : Infinity;
+      const bw = b.firstWaitingAt ? new Date(b.firstWaitingAt).getTime() : Infinity;
+      return aw - bw; // longest waiting first
+    });
+  }
+  return copy.sort((a, b) => +new Date(b.lastMessageAt) - +new Date(a.lastMessageAt));
 }
 
 export function useChatStore(operator: Operator) {
   const [scope, setScope] = useState<Scope>('all');
+  const [sort, setSort] = useState<SortMode>('recent');
   const [search, setSearch] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [counts, setCounts] = useState<Counts>({ unassigned: 0, mine: 0, open: 0 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [history, setHistory] = useState<Ticket[]>([]);
   const [connected, setConnected] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
   const selectedIdRef = useRef<number | null>(null);
   selectedIdRef.current = selectedId;
   const scopeRef = useRef(scope);
   scopeRef.current = scope;
+  const sortRef = useRef(sort);
+  sortRef.current = sort;
   const searchRef = useRef(search);
   searchRef.current = search;
+
+  // live clock for waiting timers
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 20000);
+    return () => clearInterval(id);
+  }, []);
 
   const refreshList = useCallback(async () => {
     setLoadingList(true);
     try {
-      const r = await api.listTickets(scopeRef.current, searchRef.current || undefined);
-      setTickets(sortTickets(r.tickets));
+      const r = await api.listTickets(scopeRef.current, {
+        search: searchRef.current || undefined,
+        sort: sortRef.current,
+      });
+      setTickets(sortTickets(r.tickets, sortRef.current));
       setCounts(r.counts);
     } finally {
       setLoadingList(false);
     }
   }, []);
 
-  // reload when scope/search changes (debounced for search)
   useEffect(() => {
     const id = setTimeout(refreshList, search ? 300 : 0);
     return () => clearTimeout(id);
-  }, [scope, search, refreshList]);
+  }, [scope, sort, search, refreshList]);
 
-  // debounced reconcile after bursts of ws events
   const reconcileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleReconcile = useCallback(() => {
     if (reconcileTimer.current) clearTimeout(reconcileTimer.current);
@@ -67,7 +88,7 @@ export function useChatStore(operator: Operator) {
       setTickets((prev) => {
         const inScope = !searchRef.current && scopeMatches(t, scopeRef.current, operator.id);
         const without = prev.filter((x) => x.id !== t.id);
-        return inScope ? sortTickets([t, ...without]) : without;
+        return inScope ? sortTickets([t, ...without], sortRef.current) : without;
       });
       if (selectedIdRef.current === t.id) setSelected(t);
     },
@@ -95,10 +116,14 @@ export function useChatStore(operator: Operator) {
         } catch {
           return;
         }
-        if (data.type === 'ticket:new' || data.type === 'ticket:updated') {
+        if (data.type === 'ticket:new') {
+          upsertLocal(data.ticket);
+          scheduleReconcile();
+        } else if (data.type === 'ticket:updated') {
           upsertLocal(data.ticket);
           scheduleReconcile();
         } else if (data.type === 'message:new') {
+          if (data.message.sender === 'CUSTOMER') playChime();
           if (selectedIdRef.current === data.ticketId) {
             setMessages((prev) =>
               prev.some((m) => m.id === data.message.id) ? prev : [...prev, data.message],
@@ -120,6 +145,7 @@ export function useChatStore(operator: Operator) {
     const r = await api.getTicket(id);
     setSelected(r.ticket);
     setMessages(r.messages);
+    setHistory(r.history || []);
     if (r.ticket.unreadForOperator > 0) {
       api.markRead(id).catch(() => {});
     }
@@ -129,16 +155,14 @@ export function useChatStore(operator: Operator) {
     setSelectedId(null);
     setSelected(null);
     setMessages([]);
+    setHistory([]);
   }, []);
 
-  const sendMessage = useCallback(
-    async (text: string, file?: File | null) => {
-      if (!selectedIdRef.current) return;
-      const r = await api.sendMessage(selectedIdRef.current, text, file);
-      setMessages((prev) => (prev.some((m) => m.id === r.message.id) ? prev : [...prev, r.message]));
-    },
-    [],
-  );
+  const sendMessage = useCallback(async (text: string, file?: File | null, internal?: boolean) => {
+    if (!selectedIdRef.current) return;
+    const r = await api.sendMessage(selectedIdRef.current, text, file, internal);
+    setMessages((prev) => (prev.some((m) => m.id === r.message.id) ? prev : [...prev, r.message]));
+  }, []);
 
   const doAction = useCallback(
     async (action: 'release' | 'close' | 'reopen') => {
@@ -160,9 +184,41 @@ export function useChatStore(operator: Operator) {
     [upsertLocal],
   );
 
+  const claimNext = useCallback(
+    async (name?: string) => {
+      const r = await api.claimNext(name);
+      upsertLocal(r.ticket);
+      await selectTicket(r.ticket.id);
+      return r.ticket;
+    },
+    [upsertLocal, selectTicket],
+  );
+
+  const transfer = useCallback(
+    async (operatorId: number) => {
+      if (!selectedIdRef.current) return;
+      const r = await api.transfer(selectedIdRef.current, operatorId);
+      setSelected(r.ticket);
+      upsertLocal(r.ticket);
+    },
+    [upsertLocal],
+  );
+
+  const setMeta = useCallback(
+    async (data: { priority?: Priority; tags?: string[] }) => {
+      if (!selectedIdRef.current) return;
+      const r = await api.setMeta(selectedIdRef.current, data);
+      setSelected(r.ticket);
+      upsertLocal(r.ticket);
+    },
+    [upsertLocal],
+  );
+
   return {
     scope,
     setScope,
+    sort,
+    setSort,
     search,
     setSearch,
     tickets,
@@ -170,13 +226,18 @@ export function useChatStore(operator: Operator) {
     selectedId,
     selected,
     messages,
+    history,
     connected,
     loadingList,
+    now,
     selectTicket,
     deselect,
     sendMessage,
     refreshList,
     claim,
+    claimNext,
+    transfer,
+    setMeta,
     release: () => doAction('release'),
     close: () => doAction('close'),
     reopen: () => doAction('reopen'),

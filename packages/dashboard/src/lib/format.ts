@@ -1,4 +1,4 @@
-import type { Customer, Ticket } from '../types';
+import type { Customer, Priority, Ticket } from '../types';
 
 export function customerName(c: Customer): string {
   const name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
@@ -84,3 +84,41 @@ export function avatarColor(id: string): string {
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return avatarColors[h % avatarColors.length];
 }
+
+/** How long a ticket has waited unanswered, with an SLA colour. `now` lets the UI tick. */
+export function waiting(firstWaitingAt: string | null, now: number = Date.now()) {
+  if (!firstWaitingAt) return null;
+  const mins = Math.max(0, Math.floor((now - new Date(firstWaitingAt).getTime()) / 60000));
+  const text = mins < 60 ? `${mins}м` : `${Math.floor(mins / 60)}ч ${mins % 60}м`;
+  const color = mins >= 30 ? 'text-rose-400' : mins >= 10 ? 'text-amber-400' : 'text-slate-400';
+  const dot = mins >= 30 ? 'bg-rose-400' : mins >= 10 ? 'bg-amber-400' : 'bg-slate-500';
+  return { mins, text, color, dot };
+}
+
+export function minutesLabel(m: number | null): string {
+  if (m == null) return '—';
+  if (m < 60) return `${m} мин`;
+  const h = Math.floor(m / 60);
+  return `${h} ч ${m % 60} мин`;
+}
+
+export interface PriorityMeta {
+  label: string;
+  dot: string;
+  chip: string;
+  show: boolean;
+}
+export function priorityMeta(p: Priority): PriorityMeta {
+  switch (p) {
+    case 'URGENT':
+      return { label: 'Срочно', dot: 'bg-rose-500', chip: 'bg-rose-500/15 text-rose-300 ring-rose-500/25', show: true };
+    case 'HIGH':
+      return { label: 'Высокий', dot: 'bg-amber-500', chip: 'bg-amber-500/15 text-amber-300 ring-amber-500/25', show: true };
+    case 'LOW':
+      return { label: 'Низкий', dot: 'bg-slate-500', chip: 'bg-white/[0.06] text-slate-400 ring-white/10', show: true };
+    default:
+      return { label: 'Обычный', dot: 'bg-slate-500', chip: 'bg-white/[0.06] text-slate-400 ring-white/10', show: false };
+  }
+}
+
+export const PRIORITIES: Priority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];

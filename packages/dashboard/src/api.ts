@@ -1,4 +1,4 @@
-import type { Counts, Message, Operator, Scope, Template, Ticket } from './types';
+import type { Counts, Message, Operator, Priority, Scope, SortMode, Stats, Template, Ticket } from './types';
 
 const TOKEN_KEY = 'atlas_token';
 
@@ -54,17 +54,18 @@ export const api = {
 
   me: () => request<{ operator: Operator | null }>('/api/auth/me'),
 
-  listTickets: (scope: Scope, search?: string, cursor?: number) => {
+  listTickets: (scope: Scope, opts: { search?: string; sort?: SortMode; cursor?: number } = {}) => {
     const params = new URLSearchParams({ scope });
-    if (search) params.set('search', search);
-    if (cursor) params.set('cursor', String(cursor));
+    if (opts.search) params.set('search', opts.search);
+    if (opts.sort) params.set('sort', opts.sort);
+    if (opts.cursor) params.set('cursor', String(opts.cursor));
     return request<{ tickets: Ticket[]; nextCursor: number | null; counts: Counts }>(
       `/api/tickets?${params.toString()}`,
     );
   },
 
   getTicket: (id: number) =>
-    request<{ ticket: Ticket; messages: Message[] }>(`/api/tickets/${id}`),
+    request<{ ticket: Ticket; messages: Message[]; history: Ticket[] }>(`/api/tickets/${id}`),
 
   markRead: (id: number) => request<{ ok: true }>(`/api/tickets/${id}/read`, { method: 'POST' }),
   claim: (id: number, name?: string) =>
@@ -72,16 +73,31 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(name ? { name } : {}),
     }),
+  claimNext: (name?: string) =>
+    request<{ ticket: Ticket }>(`/api/tickets/claim-next`, {
+      method: 'POST',
+      body: JSON.stringify(name ? { name } : {}),
+    }),
+  transfer: (id: number, operatorId: number) =>
+    request<{ ticket: Ticket }>(`/api/tickets/${id}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify({ operatorId }),
+    }),
+  setMeta: (id: number, data: { priority?: Priority; tags?: string[] }) =>
+    request<{ ticket: Ticket }>(`/api/tickets/${id}/meta`, { method: 'PATCH', body: JSON.stringify(data) }),
   release: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/release`, { method: 'POST' }),
   close: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/close`, { method: 'POST' }),
   reopen: (id: number) => request<{ ticket: Ticket }>(`/api/tickets/${id}/reopen`, { method: 'POST' }),
 
-  sendMessage: (id: number, text: string, file?: File | null) => {
+  sendMessage: (id: number, text: string, file?: File | null, internal?: boolean) => {
     const fd = new FormData();
     if (text) fd.append('text', text);
     if (file) fd.append('file', file);
+    if (internal) fd.append('internal', 'true');
     return request<{ message: Message }>(`/api/tickets/${id}/messages`, { method: 'POST', body: fd });
   },
+
+  getStats: () => request<Stats>('/api/stats'),
 
   // Web Push
   getVapid: () => request<{ publicKey: string; enabled: boolean }>('/api/push/vapid'),
@@ -94,8 +110,11 @@ export const api = {
 
   // Templates (canned replies)
   listTemplates: () => request<{ templates: Template[] }>('/api/templates'),
-  createTemplate: (name: string, text: string) =>
-    request<{ template: Template }>('/api/templates', { method: 'POST', body: JSON.stringify({ name, text }) }),
+  createTemplate: (data: { name: string; text: string; category?: string }) =>
+    request<{ template: Template }>('/api/templates', { method: 'POST', body: JSON.stringify(data) }),
+  updateTemplate: (id: number, data: Partial<{ name: string; text: string; category: string | null; pinned: boolean }>) =>
+    request<{ template: Template }>(`/api/templates/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  useTemplate: (id: number) => request<{ ok: true }>(`/api/templates/${id}/used`, { method: 'POST' }),
   deleteTemplate: (id: number) => request<{ ok: true }>(`/api/templates/${id}`, { method: 'DELETE' }),
 
   listOperators: () => request<{ operators: Operator[] }>('/api/operators'),

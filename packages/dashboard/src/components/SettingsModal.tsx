@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { X, Settings, Bell, Drama, Smartphone, Check, Share } from 'lucide-react';
+import { X, Settings, Bell, Drama, Smartphone, Check, Share, Volume2 } from 'lucide-react';
 import { api } from '../api';
 import { OPERATOR_PERSONAS } from '../lib/personas';
+import { isSoundOn, setSoundOn, playChime } from '../lib/sound';
 import {
   disablePush,
   enablePush,
@@ -26,6 +27,7 @@ export function SettingsModal({
   const [checked, setChecked] = useState(false);
   const [testMsg, setTestMsg] = useState('');
   const [testing, setTesting] = useState(false);
+  const [sound, setSound] = useState(isSoundOn());
 
   const blocked = pushBlockedReason();
   const needsInstall = isIOS() && !isStandalone();
@@ -179,6 +181,35 @@ export function SettingsModal({
               </div>
             )}
             {testMsg && <div className="mt-2 text-xs font-medium text-emerald-400">{testMsg}</div>}
+          </div>
+
+          {/* Sound */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+                  <Volume2 size={16} className="text-slate-400" /> Звук новых сообщений
+                </div>
+                <p className="mt-1 text-xs text-slate-400">Тихий сигнал при новом сообщении клиента.</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={sound}
+                onClick={() => {
+                  const next = !sound;
+                  setSound(next);
+                  setSoundOn(next);
+                  if (next) playChime();
+                }}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${sound ? 'accent' : 'bg-white/15'}`}
+              >
+                <span
+                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${
+                    sound ? 'left-[22px]' : 'left-0.5'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* PWA hint */}

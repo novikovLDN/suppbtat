@@ -1,6 +1,7 @@
 export type Role = 'ADMIN' | 'OPERATOR';
 export type TicketStatus = 'OPEN' | 'CLOSED';
 export type Sender = 'CUSTOMER' | 'OPERATOR' | 'SYSTEM';
+export type Priority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 
 export interface Operator {
   id: number;
@@ -27,6 +28,9 @@ export interface Ticket {
   assignedOperatorName: string | null;
   assignedName: string | null;
   subject: string | null;
+  priority: Priority;
+  tags: string[];
+  firstWaitingAt: string | null;
   customer: Customer;
   unreadForOperator: number;
   lastMessageAt: string;
@@ -40,6 +44,7 @@ export interface Message {
   sender: Sender;
   operatorId: number | null;
   operatorName: string | null;
+  internal: boolean;
   text: string | null;
   mediaType: string | null;
   mediaFileId: string | null;
@@ -57,10 +62,26 @@ export interface Template {
   id: number;
   name: string;
   text: string;
+  category?: string | null;
+  usageCount?: number;
+  pinned?: boolean;
   createdAt?: string;
 }
 
+export interface Stats {
+  open: number;
+  unassigned: number;
+  inWork: number;
+  closedTotal: number;
+  today: { created: number; closed: number };
+  avgFirstResponseMin: number | null;
+  avgResolutionMin: number | null;
+  perDay: { date: string; count: number }[];
+  operators: { id: number; name: string; active: number; replies7d: number }[];
+}
+
 export type Scope = 'all' | 'unassigned' | 'mine' | 'closed';
+export type SortMode = 'recent' | 'waiting';
 
 export type WsEvent =
   | { type: 'ready'; operator: { id: number; name: string } }

@@ -1,21 +1,30 @@
 import { useEffect, useState } from 'react';
-import { Shield, Settings, Users, LogOut } from 'lucide-react';
+import { Shield, Settings, Users, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
+import { api } from '../api';
 import { getPersona, setPersona as savePersona } from '../lib/personas';
+import type { Operator } from '../types';
 import { TicketList } from './TicketList';
 import { ChatPanel } from './ChatPanel';
 import { InfoPanel } from './InfoPanel';
 import { AdminPanel } from './AdminPanel';
 import { SettingsModal } from './SettingsModal';
+import { AnalyticsModal } from './AnalyticsModal';
 
 export function Dashboard() {
   const { operator, logout } = useAuth();
   const store = useChatStore(operator!);
   const [adminOpen, setAdminOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [persona, setPersonaState] = useState(getPersona());
+  const [operators, setOperators] = useState<Operator[]>([]);
+
+  useEffect(() => {
+    api.listOperators().then((r) => setOperators(r.operators)).catch(() => {});
+  }, []);
 
   const changePersona = (v: string) => {
     setPersonaState(v);
@@ -76,6 +85,14 @@ export function Dashboard() {
           </span>
 
           <button
+            onClick={() => setAnalyticsOpen(true)}
+            className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
+            title="Аналитика"
+          >
+            <BarChart3 size={17} />
+          </button>
+
+          <button
             onClick={() => setSettingsOpen(true)}
             className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
             title="Настройки и уведомления"
@@ -90,7 +107,7 @@ export function Dashboard() {
               title="Операторы"
             >
               <Users size={16} />
-              <span className="hidden sm:inline">Операторы</span>
+              <span className="hidden lg:inline">Операторы</span>
             </button>
           )}
 
@@ -126,9 +143,15 @@ export function Dashboard() {
         />
 
         {/* Info: static column on xl, slide-over drawer below xl */}
-        <InfoPanel store={store} persona={persona} variant="column" />
+        <InfoPanel store={store} persona={persona} operators={operators} variant="column" />
         {infoOpen && hasSelection && (
-          <InfoPanel store={store} persona={persona} variant="drawer" onClose={() => setInfoOpen(false)} />
+          <InfoPanel
+            store={store}
+            persona={persona}
+            operators={operators}
+            variant="drawer"
+            onClose={() => setInfoOpen(false)}
+          />
         )}
       </div>
 
@@ -139,6 +162,7 @@ export function Dashboard() {
           onPersonaChange={changePersona}
         />
       )}
+      {analyticsOpen && <AnalyticsModal onClose={() => setAnalyticsOpen(false)} />}
       {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
     </div>
   );

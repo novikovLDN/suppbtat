@@ -1,7 +1,17 @@
-import { Search, User, Inbox } from 'lucide-react';
+import { useState } from 'react';
+import { Search, User, Inbox, Clock, ArrowDownUp, PlusCircle, Tag } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Scope } from '../types';
-import { avatarColor, customerName, initials, relativeDay, statusBadge } from '../lib/format';
+import { getPersona } from '../lib/personas';
+import {
+  avatarColor,
+  customerName,
+  initials,
+  priorityMeta,
+  relativeDay,
+  statusBadge,
+  waiting,
+} from '../lib/format';
 
 const SCOPES: { key: Scope; label: string; countKey?: 'unassigned' | 'mine' | 'open' }[] = [
   { key: 'all', label: 'Все', countKey: 'open' },
@@ -11,11 +21,24 @@ const SCOPES: { key: Scope; label: string; countKey?: 'unassigned' | 'mine' | 'o
 ];
 
 export function TicketList({ store, className = '' }: { store: ChatStore; className?: string }) {
+  const [claiming, setClaiming] = useState(false);
+
+  const claimNext = async () => {
+    if (claiming) return;
+    setClaiming(true);
+    try {
+      await store.claimNext(getPersona() || undefined);
+    } catch {
+      /* queue empty — ignore */
+    } finally {
+      setClaiming(false);
+    }
+  };
+
   return (
     <aside
       className={`panel w-full shrink-0 flex-col overflow-hidden rounded-[26px] lg:w-80 xl:w-[340px] ${className}`}
     >
-      {/* Search + tabs */}
       <div className="border-b border-white/[0.06] p-3">
         <div className="relative">
           <Search
@@ -25,7 +48,7 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
           <input
             value={store.search}
             onChange={(e) => store.setSearch(e.target.value)}
-            placeholder="Поиск: #номер, имя, @username"
+            placeholder="Поиск: #, имя, текст сообщения"
             className="tile w-full rounded-full py-2.5 pl-9 pr-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
           />
         </div>
@@ -56,6 +79,25 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
             );
           })}
         </div>
+
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          <button
+            onClick={() => store.setSort(store.sort === 'waiting' ? 'recent' : 'waiting')}
+            className="tile tile-hover flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition"
+            title="Сортировка"
+          >
+            {store.sort === 'waiting' ? <Clock size={13} /> : <ArrowDownUp size={13} />}
+            {store.sort === 'waiting' ? 'Дольше ждут' : 'Недавние'}
+          </button>
+          <button
+            onClick={claimNext}
+            disabled={claiming || store.counts.unassigned === 0}
+            className="accent flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white transition active:scale-95 disabled:opacity-40"
+            title="Взять самый давний неотвеченный тикет"
+          >
+            <PlusCircle size={13} /> Взять следующий
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -73,14 +115,14 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
         {store.tickets.map((t) => {
           const badge = statusBadge(t);
           const selected = store.selectedId === t.id;
+          const pr = priorityMeta(t.priority);
+          const w = t.status === 'OPEN' ? waiting(t.firstWaitingAt, store.now) : null;
           return (
             <button
               key={t.id}
               onClick={() => store.selectTicket(t.id)}
               className={`group mb-1 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition ${
-                selected
-                  ? 'bg-white/[0.07] ring-1 ring-inset ring-white/10'
-                  : 'hover:bg-white/[0.04]'
+                selected ? 'bg-white/[0.07] ring-1 ring-inset ring-white/10' : 'hover:bg-white/[0.04]'
               }`}
             >
               <div
@@ -93,12 +135,19 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-semibold text-white">
-                    {customerName(t.customer)}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {pr.show && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pr.dot}`} title={pr.label} />}
+                    <span className="truncate text-sm font-semibold text-white">
+                      {customerName(t.customer)}
+                    </span>
                   </span>
-                  <span className="shrink-0 text-[11px] text-slate-500">
-                    {relativeDay(t.lastMessageAt)}
-                  </span>
+                  {w ? (
+                    <span className={`flex shrink-0 items-center gap-1 text-[11px] font-medium ${w.color}`}>
+                      <Clock size={11} /> {w.text}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[11px] text-slate-500">{relativeDay(t.lastMessageAt)}</span>
+                  )}
                 </div>
                 <div className="mt-1 flex items-center gap-1.5">
                   <span className="font-mono text-[11px] text-slate-500">#{t.number}</span>
@@ -117,6 +166,18 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
                     </span>
                   )}
                 </div>
+                {t.tags.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {t.tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="flex items-center gap-0.5 rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] text-slate-400"
+                      >
+                        <Tag size={8} /> {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {t.assignedOperatorName && t.status === 'OPEN' && (
                   <div className="mt-1 flex items-center gap-1 truncate text-[10px] text-slate-500">
                     <User size={10} /> {t.assignedOperatorName}
