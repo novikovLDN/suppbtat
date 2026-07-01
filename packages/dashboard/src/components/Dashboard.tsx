@@ -44,33 +44,31 @@ export function Dashboard() {
   }, [selectTicket]);
 
   return (
-    <div className="flex h-full flex-col p-2 text-slate-900 sm:p-3">
+    <div className="flex h-full flex-col p-2 text-slate-100 sm:p-3">
       {/* Header */}
-      <header className="panel z-20 mb-2 flex h-16 shrink-0 items-center justify-between rounded-3xl px-3 sm:mb-3 sm:px-5">
+      <header className="panel z-20 mb-2 flex h-16 shrink-0 items-center justify-between rounded-[26px] px-3 sm:mb-3 sm:px-5">
         <div className="flex items-center gap-2.5">
           <div className="accent flex h-10 w-10 items-center justify-center rounded-2xl text-lg text-white">
             🛡️
           </div>
           <div className="leading-tight">
-            <div className="text-[15px] font-semibold tracking-tight text-slate-900">
-              Atlas&nbsp;Secure
-            </div>
-            <div className="hidden text-[11px] text-slate-500 sm:block">Панель поддержки</div>
+            <div className="text-[15px] font-semibold tracking-tight text-white">Atlas&nbsp;Secure</div>
+            <div className="label hidden text-[9px] text-slate-500 sm:block">Панель поддержки</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-2.5">
           <span
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium ring-1 ring-inset transition ${
-              store.connected
-                ? 'bg-emerald-400/20 text-emerald-700 ring-emerald-300/50'
-                : 'bg-rose-400/20 text-rose-700 ring-rose-300/50'
+            className={`tile flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium transition ${
+              store.connected ? 'text-emerald-300' : 'text-rose-300'
             }`}
             title={store.connected ? 'Соединение активно' : 'Переподключение…'}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                store.connected ? 'bg-emerald-500' : 'animate-pulse-glow bg-rose-500'
+                store.connected
+                  ? 'bg-emerald-400'
+                  : 'animate-pulse-glow bg-rose-400'
               }`}
             />
             <span className="hidden sm:inline">{store.connected ? 'Онлайн' : 'Оффлайн'}</span>
@@ -78,7 +76,7 @@ export function Dashboard() {
 
           <button
             onClick={() => setSettingsOpen(true)}
-            className="glass glass-hover flex h-9 w-9 items-center justify-center rounded-full text-sm text-slate-700 transition active:scale-95"
+            className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-sm text-slate-300 transition active:scale-95"
             title="Настройки и уведомления"
           >
             ⚙️
@@ -87,25 +85,25 @@ export function Dashboard() {
           {operator!.role === 'ADMIN' && (
             <button
               onClick={() => setAdminOpen(true)}
-              className="glass glass-hover rounded-full px-3 py-2 text-xs font-medium text-slate-700 transition active:scale-95"
+              className="tile tile-hover rounded-full px-3 py-2 text-xs font-medium text-slate-300 transition active:scale-95"
             >
               <span className="sm:hidden">👥</span>
               <span className="hidden sm:inline">👥 Операторы</span>
             </button>
           )}
 
-          <div className="glass flex items-center gap-2 rounded-full py-1 pl-1 pr-1 md:pr-3">
+          <div className="tile flex items-center gap-2 rounded-full py-1 pl-1 pr-1 md:pr-3">
             <div className="accent flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white">
               {operator!.displayName.slice(0, 1).toUpperCase()}
             </div>
-            <span className="hidden text-xs font-medium text-slate-700 md:inline">
+            <span className="hidden text-xs font-medium text-slate-200 md:inline">
               {operator!.displayName}
             </span>
           </div>
 
           <button
             onClick={logout}
-            className="rounded-full px-2 py-2 text-xs text-slate-500 transition hover:text-rose-600"
+            className="rounded-full px-2 py-2 text-xs text-slate-500 transition hover:text-rose-400"
             title="Выйти"
           >
             <span className="md:hidden">⎋</span>

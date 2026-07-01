@@ -13,7 +13,7 @@ export function InfoPanel({ store, variant, persona, onClose }: Props) {
 
   if (variant === 'column') {
     return (
-      <aside className="panel hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-3xl xl:flex">
+      <aside className="panel hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-[26px] xl:flex">
         {t ? <Body store={store} persona={persona} /> : null}
       </aside>
     );
@@ -22,14 +22,14 @@ export function InfoPanel({ store, variant, persona, onClose }: Props) {
   // Drawer (slide-over) for < xl screens.
   return (
     <div className="fixed inset-0 z-40 flex justify-end xl:hidden" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/25 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <aside
         className="panel animate-slide-in-right relative flex h-full w-[88%] max-w-sm flex-col overflow-y-auto rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="glass absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-600 transition active:scale-95"
+          className="tile absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
         >
           ✕
         </button>
@@ -47,16 +47,16 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
 
   return (
     <>
-      <div className="flex flex-col items-center border-b border-white/40 p-6 text-center">
+      <div className="flex flex-col items-center border-b border-white/[0.06] p-6 text-center">
         <div
-          className={`flex h-20 w-20 items-center justify-center rounded-3xl text-2xl font-semibold shadow-md ring-1 ring-white/50 ${avatarColor(
+          className={`flex h-20 w-20 items-center justify-center rounded-[22px] text-2xl font-semibold ${avatarColor(
             t.customer.id,
           )}`}
         >
           {initials(t.customer)}
         </div>
-        <div className="mt-3 font-semibold text-slate-900">{customerName(t.customer)}</div>
-        {t.customer.username && <div className="text-xs text-slate-400">@{t.customer.username}</div>}
+        <div className="mt-3 font-semibold text-white">{customerName(t.customer)}</div>
+        {t.customer.username && <div className="text-xs text-slate-500">@{t.customer.username}</div>}
         <span
           className={`mt-2.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${badge.className}`}
         >
@@ -65,7 +65,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         </span>
       </div>
 
-      <div className="space-y-2.5 border-b border-white/40 p-4 text-xs">
+      <div className="space-y-3 border-b border-white/[0.06] p-4 text-xs">
         <Row label="Тикет" value={`#${t.number}`} mono />
         <Row label="Telegram ID" value={t.customer.id} mono />
         <Row label="Создан" value={dateTime(t.createdAt)} />
@@ -80,12 +80,12 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
           <>
             <button
               onClick={() => store.claim(persona || undefined)}
-              className="accent w-full rounded-2xl py-3 text-sm font-medium text-white transition active:scale-[0.98]"
+              className="accent w-full rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
             >
               ✋ Взять в работу
             </button>
             <p className="text-center text-[11px] text-slate-500">
-              Клиент увидит: <span className="font-medium text-blue-600">{persona || 'случайное имя'}</span>
+              Клиент увидит: <span className="font-medium text-indigo-300">{persona || 'случайное имя'}</span>
               <br />
               (изменить — в ⚙️ Настройках)
             </p>
@@ -94,7 +94,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         {open && assigned && (
           <button
             onClick={() => store.release()}
-            className="glass glass-hover w-full rounded-2xl py-3 text-sm font-medium text-slate-700 transition active:scale-[0.98]"
+            className="tile tile-hover w-full rounded-2xl py-3 text-sm font-medium text-slate-200 transition active:scale-[0.98]"
           >
             ↩️ Вернуть в очередь
           </button>
@@ -102,7 +102,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         {open && (
           <button
             onClick={() => store.close()}
-            className="w-full rounded-2xl bg-rose-400/15 py-3 text-sm font-medium text-rose-700 ring-1 ring-inset ring-rose-300/40 transition hover:bg-rose-400/25 active:scale-[0.98]"
+            className="w-full rounded-2xl bg-rose-500/10 py-3 text-sm font-medium text-rose-300 ring-1 ring-inset ring-rose-500/20 transition hover:bg-rose-500/20 active:scale-[0.98]"
           >
             🔒 Закрыть тикет
           </button>
@@ -110,7 +110,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         {!open && (
           <button
             onClick={() => store.reopen()}
-            className="accent w-full rounded-2xl py-3 text-sm font-medium text-white transition active:scale-[0.98]"
+            className="accent w-full rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
           >
             🔓 Переоткрыть тикет
           </button>
@@ -122,9 +122,11 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-2">
-      <span className="text-slate-400">{label}</span>
-      <span className={`text-right font-medium text-slate-700 ${mono ? 'font-mono' : ''}`}>{value}</span>
+    <div className="flex items-center justify-between gap-2">
+      <span className="label text-[10px] text-slate-500">{label}</span>
+      <span className={`text-right text-[13px] font-medium text-slate-200 ${mono ? 'font-mono' : ''}`}>
+        {value}
+      </span>
     </div>
   );
 }

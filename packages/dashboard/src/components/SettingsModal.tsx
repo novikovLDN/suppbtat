@@ -73,18 +73,18 @@ export function SettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/25 pb-safe backdrop-blur-md sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 pb-safe backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="panel-solid animate-slide-up flex w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-w-md sm:rounded-3xl"
+        className="panel animate-slide-up flex w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-w-md sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/40 px-5 py-4">
-          <h2 className="text-sm font-semibold text-slate-900">⚙️ Настройки</h2>
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+          <h2 className="text-sm font-semibold text-white">⚙️ Настройки</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/50"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06]"
           >
             ✕
           </button>
@@ -92,8 +92,8 @@ export function SettingsModal({
 
         <div className="space-y-3 p-5">
           {/* Operator persona */}
-          <div className="rounded-2xl border border-white/50 bg-white/40 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
               🎭 Имя оператора для клиента
             </div>
             <p className="mt-1 text-xs text-slate-400">
@@ -103,7 +103,7 @@ export function SettingsModal({
             <select
               value={persona}
               onChange={(e) => onPersonaChange(e.target.value)}
-              className="mt-3 w-full rounded-xl border border-white/60 bg-white/60 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white/85 focus:ring-4 focus:ring-blue-500/10"
+              className="tile mt-3 w-full rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
             >
               <option value="">🎲 Случайно</option>
               {OPERATOR_PERSONAS.map((n) => (
@@ -115,10 +115,10 @@ export function SettingsModal({
           </div>
 
           {/* Notifications toggle */}
-          <div className="rounded-2xl border border-white/50 bg-white/40 p-4">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
                   🔔 Push-уведомления
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
@@ -131,7 +131,7 @@ export function SettingsModal({
                 disabled={busy || !!blocked || !checked}
                 onClick={toggle}
                 className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40 ${
-                  enabled ? 'accent' : 'bg-slate-400/50'
+                  enabled ? 'accent' : 'bg-white/15'
                 }`}
               >
                 <span
@@ -143,18 +143,18 @@ export function SettingsModal({
             </div>
 
             {needsInstall && (
-              <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700 ring-1 ring-inset ring-amber-200">
+              <div className="mt-3 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-300 ring-1 ring-inset ring-amber-500/20">
                 📲 На iPhone: откройте «Поделиться» → «На экран „Домой“», запустите приложение с
                 иконки — и включите уведомления уже там.
               </div>
             )}
             {!needsInstall && blocked && (
-              <div className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-500">
+              <div className="mt-3 rounded-xl bg-white/[0.05] px-3 py-2 text-xs text-slate-400">
                 {blocked}
               </div>
             )}
             {error && (
-              <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600 ring-1 ring-inset ring-rose-100">
+              <div className="mt-3 rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-300 ring-1 ring-inset ring-rose-500/20">
                 {error}
               </div>
             )}
@@ -164,7 +164,7 @@ export function SettingsModal({
                 <button
                   onClick={sendTest}
                   disabled={testing}
-                  className="glass glass-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition disabled:opacity-50"
+                  className="tile tile-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition disabled:opacity-50"
                 >
                   {testing ? 'Отправка…' : '🔔 Тест уведомления'}
                 </button>
@@ -174,8 +174,8 @@ export function SettingsModal({
           </div>
 
           {/* PWA hint */}
-          <div className="rounded-2xl border border-white/50 bg-white/40 p-4 text-xs text-slate-400">
-            <div className="mb-1 text-sm font-semibold text-slate-800">📱 Установка приложения</div>
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 text-xs text-slate-400">
+            <div className="mb-1 text-sm font-semibold text-slate-100">📱 Установка приложения</div>
             Добавьте дашборд на экран «Домой» — он откроется как отдельное приложение на весь экран,
             без адресной строки.
             <div className="mt-2 text-slate-400">

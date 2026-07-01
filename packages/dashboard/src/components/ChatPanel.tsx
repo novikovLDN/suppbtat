@@ -24,9 +24,9 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
 
   if (!selected) {
     return (
-      <main className={`panel flex-1 items-center justify-center rounded-3xl ${className}`}>
+      <main className={`panel flex-1 items-center justify-center rounded-[26px] ${className}`}>
         <div className="text-center text-slate-500">
-          <div className="mb-3 text-5xl opacity-40">💬</div>
+          <div className="mb-3 text-5xl opacity-30">💬</div>
           <div className="text-sm">Выберите тикет, чтобы начать переписку</div>
         </div>
       </main>
@@ -39,20 +39,20 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
   const personaLocked = !!selected.assignedName;
 
   return (
-    <main className={`panel min-w-0 flex-1 flex-col overflow-hidden rounded-3xl ${className}`}>
+    <main className={`panel min-w-0 flex-1 flex-col overflow-hidden rounded-[26px] ${className}`}>
       {/* Chat header */}
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/40 px-2 sm:px-4">
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/[0.06] px-2 sm:px-4">
         {onBack && (
           <button
             onClick={onBack}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-white/50 active:scale-95 lg:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/[0.06] active:scale-95 lg:hidden"
             title="Назад к списку"
           >
             ←
           </button>
         )}
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold shadow-sm ring-1 ring-white/50 ${avatarColor(
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${avatarColor(
             selected.customer.id,
           )}`}
         >
@@ -60,7 +60,7 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-slate-900">
+            <span className="truncate text-sm font-semibold text-white">
               {customerName(selected.customer)}
             </span>
             <span
@@ -70,13 +70,13 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
               {badge.label}
             </span>
           </div>
-          <div className="truncate text-[11px] text-slate-400">
+          <div className="truncate text-[11px] text-slate-500">
             <span className="font-mono">#{selected.number}</span>
             {selected.assignedOperatorName ? ` · ${selected.assignedOperatorName}` : ' · не назначен'}
           </div>
         </div>
         <span
-          className="hidden shrink-0 items-center gap-1 rounded-full bg-blue-500/15 px-2.5 py-1 text-[11px] font-medium text-blue-700 ring-1 ring-inset ring-blue-400/30 sm:flex"
+          className="hidden shrink-0 items-center gap-1 rounded-full bg-indigo-500/15 px-2.5 py-1 text-[11px] font-medium text-indigo-300 ring-1 ring-inset ring-indigo-400/20 sm:flex"
           title={personaLocked ? 'Имя для клиента (закреплено)' : 'Имя для клиента при взятии в работу'}
         >
           🎭 <span className="max-w-[130px] truncate">{personaLabel}</span>
@@ -85,7 +85,7 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
         {onToggleInfo && (
           <button
             onClick={onToggleInfo}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-white/50 active:scale-95 xl:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/[0.06] active:scale-95 xl:hidden"
             title="Информация"
           >
             ⓘ
@@ -109,7 +109,9 @@ function MessageBubble({ m, mine }: { m: Message; mine: boolean }) {
   if (m.sender === 'SYSTEM') {
     return (
       <div className="flex animate-fade-in justify-center py-1">
-        <span className="glass rounded-full px-3 py-1 text-[11px] text-slate-600">{m.text}</span>
+        <span className="rounded-full bg-white/[0.05] px-3 py-1 text-[11px] text-slate-400 ring-1 ring-inset ring-white/[0.06]">
+          {m.text}
+        </span>
       </div>
     );
   }
@@ -118,14 +120,14 @@ function MessageBubble({ m, mine }: { m: Message; mine: boolean }) {
   return (
     <div className={`flex animate-fade-in ${fromOperator ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[82%] rounded-2xl px-3.5 py-2 text-sm shadow-sm sm:max-w-[72%] ${
+        className={`max-w-[82%] rounded-2xl px-3.5 py-2 text-sm sm:max-w-[72%] ${
           fromOperator
             ? 'accent rounded-br-md text-white'
-            : 'rounded-bl-md border border-white/60 bg-white/80 text-slate-800 backdrop-blur'
+            : 'rounded-bl-md border border-white/[0.07] bg-white/[0.05] text-slate-100'
         }`}
       >
         {fromOperator && m.operatorName && (
-          <div className="mb-0.5 text-[10px] font-medium text-blue-50">
+          <div className="mb-0.5 text-[10px] font-medium text-white/70">
             {mine ? 'Вы' : m.operatorName}
           </div>
         )}
@@ -146,7 +148,7 @@ function MessageBubble({ m, mine }: { m: Message; mine: boolean }) {
             target="_blank"
             rel="noreferrer"
             className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs underline ${
-              fromOperator ? 'bg-white/20' : 'bg-slate-100'
+              fromOperator ? 'bg-black/20' : 'bg-white/10'
             }`}
           >
             📎 {m.fileName || mediaLabel(m.mediaType)}
@@ -157,7 +159,7 @@ function MessageBubble({ m, mine }: { m: Message; mine: boolean }) {
 
         <div
           className={`mt-0.5 text-right text-[10px] ${
-            fromOperator ? 'text-blue-50/80' : 'text-slate-400'
+            fromOperator ? 'text-white/60' : 'text-slate-500'
           }`}
         >
           {timeShort(m.createdAt)}
@@ -214,11 +216,11 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
 
   if (disabled) {
     return (
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-white/40 px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] px-4 py-3">
         <span className="text-xs text-slate-500">🔒 Тикет закрыт. Переоткройте, чтобы продолжить.</span>
         <button
           onClick={() => store.reopen()}
-          className="glass glass-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition active:scale-95"
+          className="tile tile-hover rounded-full px-3 py-1.5 text-xs font-medium text-slate-200 transition active:scale-95"
         >
           Переоткрыть
         </button>
@@ -227,27 +229,27 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
   }
 
   return (
-    <div className="shrink-0 border-t border-white/40 px-3 py-3 sm:px-4">
+    <div className="shrink-0 border-t border-white/[0.06] px-3 py-3 sm:px-4">
       {file && (
-        <div className="mb-2 flex items-center gap-2 text-xs text-slate-600">
-          <span className="glass rounded-lg px-2 py-1">📎 {file.name}</span>
-          <button onClick={() => setFile(null)} className="text-slate-400 hover:text-rose-600">
+        <div className="mb-2 flex items-center gap-2 text-xs text-slate-400">
+          <span className="tile rounded-lg px-2 py-1">📎 {file.name}</span>
+          <button onClick={() => setFile(null)} className="text-slate-500 hover:text-rose-400">
             убрать
           </button>
         </div>
       )}
-      {error && <div className="mb-2 text-xs text-rose-600">{error}</div>}
+      {error && <div className="mb-2 text-xs text-rose-400">{error}</div>}
       <div className="flex items-end gap-2">
         <button
           onClick={() => setTemplatesOpen(true)}
-          className="glass glass-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-slate-600 transition active:scale-95"
+          className="tile tile-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-slate-300 transition active:scale-95"
           title="Шаблоны ответов"
         >
           ⚡
         </button>
         <button
           onClick={() => fileRef.current?.click()}
-          className="glass glass-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-slate-600 transition active:scale-95"
+          className="tile tile-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-slate-300 transition active:scale-95"
           title="Прикрепить фото или файл"
         >
           📎
@@ -271,7 +273,7 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
           }}
           rows={1}
           placeholder="Сообщение клиенту…"
-          className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-white/60 bg-white/60 px-3.5 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:bg-white/85 focus:ring-4 focus:ring-blue-500/10"
+          className="tile max-h-32 min-h-11 flex-1 resize-none rounded-2xl px-3.5 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
         />
         <button
           onClick={send}

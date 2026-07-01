@@ -4,7 +4,7 @@ import type { Operator } from '../types';
 import { dateTime } from '../lib/format';
 
 const inputCls =
-  'w-full rounded-xl border border-white/60 bg-white/60 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:bg-white/85 focus:ring-4 focus:ring-blue-500/10';
+  'tile w-full rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10';
 
 export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -51,18 +51,18 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/25 pb-safe backdrop-blur-md sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 pb-safe backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="panel-solid animate-slide-up flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[85vh] sm:max-w-2xl sm:rounded-3xl"
+        className="panel animate-slide-up flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[85vh] sm:max-w-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/40 px-5 py-4">
-          <h2 className="text-sm font-semibold text-slate-900">👥 Управление операторами</h2>
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+          <h2 className="text-sm font-semibold text-white">👥 Управление операторами</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/50"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06]"
           >
             ✕
           </button>
@@ -71,9 +71,9 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         <div className="overflow-y-auto p-4 sm:p-5">
           <form
             onSubmit={create}
-            className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-white/50 bg-white/40 p-4 sm:grid-cols-2"
+            className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 sm:grid-cols-2"
           >
-            <div className="text-xs font-semibold text-slate-500 sm:col-span-2">Новый оператор</div>
+            <div className="label text-[10px] text-slate-500 sm:col-span-2">Новый оператор</div>
             <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Логин" className={inputCls} />
             <input
               value={displayName}
@@ -102,7 +102,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           </form>
 
           {error && (
-            <div className="mb-3 rounded-xl bg-rose-400/15 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-300/40">
+            <div className="mb-3 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-300 ring-1 ring-inset ring-rose-500/20">
               {error}
             </div>
           )}
@@ -114,16 +114,16 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               {operators.map((op) => (
                 <div
                   key={op.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-white/50 bg-white/40 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="truncate font-semibold text-slate-800">{op.displayName}</span>
+                      <span className="truncate font-semibold text-slate-100">{op.displayName}</span>
                       <span
                         className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
                           op.role === 'ADMIN'
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-slate-200 text-slate-500'
+                            ? 'bg-indigo-500/15 text-indigo-300'
+                            : 'bg-white/10 text-slate-300'
                         }`}
                       >
                         {op.role === 'ADMIN' ? 'Админ' : 'Оператор'}
@@ -137,7 +137,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                   </div>
                   <button
                     onClick={() => toggleActive(op)}
-                    className="glass glass-hover shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition active:scale-95"
+                    className="tile tile-hover shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-slate-700 transition active:scale-95"
                   >
                     {op.isActive ? 'Отключить' : 'Включить'}
                   </button>

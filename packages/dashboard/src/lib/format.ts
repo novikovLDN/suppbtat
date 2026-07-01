@@ -50,32 +50,33 @@ export function statusBadge(t: Ticket): StatusBadge {
   if (t.status === 'CLOSED') {
     return {
       label: 'Закрыт',
-      className: 'bg-slate-400/15 text-slate-600 ring-1 ring-inset ring-white/40',
-      dot: 'bg-slate-400',
+      className: 'bg-white/[0.05] text-slate-400 ring-1 ring-inset ring-white/10',
+      dot: 'bg-slate-500',
     };
   }
   if (t.assignedOperatorId === null) {
     return {
       label: 'Новый',
-      className: 'bg-amber-400/20 text-amber-700 ring-1 ring-inset ring-amber-300/50',
-      dot: 'bg-amber-500',
+      className: 'bg-amber-400/10 text-amber-300 ring-1 ring-inset ring-amber-400/20',
+      dot: 'bg-amber-400',
     };
   }
   return {
     label: 'В работе',
-    className: 'bg-emerald-400/20 text-emerald-700 ring-1 ring-inset ring-emerald-300/50',
-    dot: 'bg-emerald-500',
+    className: 'bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-400/20',
+    dot: 'bg-emerald-400',
   };
 }
 
+// Flat, desaturated tints — restrained, "expensive", no gradients.
 const avatarColors = [
-  'bg-gradient-to-br from-rose-400 to-pink-500 text-white',
-  'bg-gradient-to-br from-sky-400 to-blue-500 text-white',
-  'bg-gradient-to-br from-violet-400 to-indigo-500 text-white',
-  'bg-gradient-to-br from-emerald-400 to-teal-500 text-white',
-  'bg-gradient-to-br from-amber-400 to-orange-500 text-white',
-  'bg-gradient-to-br from-cyan-400 to-sky-500 text-white',
-  'bg-gradient-to-br from-fuchsia-400 to-purple-500 text-white',
+  'bg-rose-500/15 text-rose-200 ring-1 ring-inset ring-white/5',
+  'bg-sky-500/15 text-sky-200 ring-1 ring-inset ring-white/5',
+  'bg-indigo-500/15 text-indigo-200 ring-1 ring-inset ring-white/5',
+  'bg-emerald-500/15 text-emerald-200 ring-1 ring-inset ring-white/5',
+  'bg-amber-500/15 text-amber-200 ring-1 ring-inset ring-white/5',
+  'bg-cyan-500/15 text-cyan-200 ring-1 ring-inset ring-white/5',
+  'bg-violet-500/15 text-violet-200 ring-1 ring-inset ring-white/5',
 ];
 
 export function avatarColor(id: string): string {
