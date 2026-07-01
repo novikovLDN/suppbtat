@@ -12,9 +12,8 @@ export function InfoPanel({ store, variant, persona, onClose }: Props) {
   const t = store.selected;
 
   if (variant === 'column') {
-    // Static third column — only on very wide screens.
     return (
-      <aside className="panel hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-2xl xl:flex">
+      <aside className="panel hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-3xl xl:flex">
         {t ? <Body store={store} persona={persona} /> : null}
       </aside>
     );
@@ -23,14 +22,14 @@ export function InfoPanel({ store, variant, persona, onClose }: Props) {
   // Drawer (slide-over) for < xl screens.
   return (
     <div className="fixed inset-0 z-40 flex justify-end xl:hidden" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-slate-900/25 backdrop-blur-sm" />
       <aside
-        className="animate-slide-in-right relative flex h-full w-[88%] max-w-sm flex-col overflow-y-auto border-l border-slate-200 bg-white"
+        className="panel animate-slide-in-right relative flex h-full w-[88%] max-w-sm flex-col overflow-y-auto rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100"
+          className="glass absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-600 transition active:scale-95"
         >
           ✕
         </button>
@@ -48,9 +47,9 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
 
   return (
     <>
-      <div className="flex flex-col items-center border-b border-slate-100 p-6 text-center">
+      <div className="flex flex-col items-center border-b border-white/40 p-6 text-center">
         <div
-          className={`flex h-20 w-20 items-center justify-center rounded-3xl text-2xl font-semibold ${avatarColor(
+          className={`flex h-20 w-20 items-center justify-center rounded-3xl text-2xl font-semibold shadow-md ring-1 ring-white/50 ${avatarColor(
             t.customer.id,
           )}`}
         >
@@ -66,7 +65,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         </span>
       </div>
 
-      <div className="space-y-2.5 border-b border-slate-100 p-4 text-xs">
+      <div className="space-y-2.5 border-b border-white/40 p-4 text-xs">
         <Row label="Тикет" value={`#${t.number}`} mono />
         <Row label="Telegram ID" value={t.customer.id} mono />
         <Row label="Создан" value={dateTime(t.createdAt)} />
@@ -81,11 +80,11 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
           <>
             <button
               onClick={() => store.claim(persona || undefined)}
-              className="w-full rounded-2xl bg-[#2563eb] py-3 text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition hover:bg-[#1d4ed8] active:scale-[0.98]"
+              className="accent w-full rounded-2xl py-3 text-sm font-medium text-white transition active:scale-[0.98]"
             >
               ✋ Взять в работу
             </button>
-            <p className="text-center text-[11px] text-slate-400">
+            <p className="text-center text-[11px] text-slate-500">
               Клиент увидит: <span className="font-medium text-blue-600">{persona || 'случайное имя'}</span>
               <br />
               (изменить — в ⚙️ Настройках)
@@ -95,7 +94,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         {open && assigned && (
           <button
             onClick={() => store.release()}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 active:scale-[0.98]"
+            className="glass glass-hover w-full rounded-2xl py-3 text-sm font-medium text-slate-700 transition active:scale-[0.98]"
           >
             ↩️ Вернуть в очередь
           </button>
@@ -103,7 +102,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         {open && (
           <button
             onClick={() => store.close()}
-            className="w-full rounded-2xl border border-rose-200 bg-rose-50 py-3 text-sm font-medium text-rose-600 transition hover:bg-rose-100 active:scale-[0.98]"
+            className="w-full rounded-2xl bg-rose-400/15 py-3 text-sm font-medium text-rose-700 ring-1 ring-inset ring-rose-300/40 transition hover:bg-rose-400/25 active:scale-[0.98]"
           >
             🔒 Закрыть тикет
           </button>
@@ -111,7 +110,7 @@ function Body({ store, persona }: { store: ChatStore; persona: string }) {
         {!open && (
           <button
             onClick={() => store.reopen()}
-            className="w-full rounded-2xl bg-[#2563eb] py-3 text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition hover:bg-[#1d4ed8] active:scale-[0.98]"
+            className="accent w-full rounded-2xl py-3 text-sm font-medium text-white transition active:scale-[0.98]"
           >
             🔓 Переоткрыть тикет
           </button>

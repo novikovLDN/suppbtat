@@ -50,32 +50,32 @@ export function statusBadge(t: Ticket): StatusBadge {
   if (t.status === 'CLOSED') {
     return {
       label: 'Закрыт',
-      className: 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200',
+      className: 'bg-slate-400/15 text-slate-600 ring-1 ring-inset ring-white/40',
       dot: 'bg-slate-400',
     };
   }
   if (t.assignedOperatorId === null) {
     return {
       label: 'Новый',
-      className: 'bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-200',
+      className: 'bg-amber-400/20 text-amber-700 ring-1 ring-inset ring-amber-300/50',
       dot: 'bg-amber-500',
     };
   }
   return {
     label: 'В работе',
-    className: 'bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-200',
+    className: 'bg-emerald-400/20 text-emerald-700 ring-1 ring-inset ring-emerald-300/50',
     dot: 'bg-emerald-500',
   };
 }
 
 const avatarColors = [
-  'bg-rose-100 text-rose-600',
-  'bg-sky-100 text-sky-600',
-  'bg-violet-100 text-violet-600',
-  'bg-emerald-100 text-emerald-600',
-  'bg-amber-100 text-amber-600',
-  'bg-cyan-100 text-cyan-600',
-  'bg-fuchsia-100 text-fuchsia-600',
+  'bg-gradient-to-br from-rose-400 to-pink-500 text-white',
+  'bg-gradient-to-br from-sky-400 to-blue-500 text-white',
+  'bg-gradient-to-br from-violet-400 to-indigo-500 text-white',
+  'bg-gradient-to-br from-emerald-400 to-teal-500 text-white',
+  'bg-gradient-to-br from-amber-400 to-orange-500 text-white',
+  'bg-gradient-to-br from-cyan-400 to-sky-500 text-white',
+  'bg-gradient-to-br from-fuchsia-400 to-purple-500 text-white',
 ];
 
 export function avatarColor(id: string): string {
