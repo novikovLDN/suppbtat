@@ -71,6 +71,12 @@ model Ticket {
   assignedName  String?
   claimNotified Boolean @default(false)
 
+  // smart queue
+  priority       Priority  @default(NORMAL)
+  tags           String[]  @default([])
+  // when the current unanswered wait started (null = answered / no pending wait)
+  firstWaitingAt DateTime?
+
   messages Message[]
 
   // Fast lookups: the customer's currently-open ticket, queue ordering, filters.
@@ -85,6 +91,13 @@ enum TicketStatus {
   CLOSED
 }
 
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
 model Message {
   id         BigInt    @id @default(autoincrement())
   ticket     Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
@@ -94,6 +107,9 @@ model Message {
   operatorId Int?
 
   text String? @db.Text
+
+  // internal note: visible to operators only, never delivered to the customer
+  internal Boolean @default(false)
 
   // Media: telegram file_id + kind ("photo" | "document" | "video" | "voice"), optional.
   mediaType   String?
@@ -130,8 +146,12 @@ model Template {
   id          Int      @id @default(autoincrement())
   name        String
   text        String   @db.Text
+  category    String?
+  usageCount  Int      @default(0)
+  pinned      Boolean  @default(false)
   createdById Int?
   createdAt   DateTime @default(now())
 
   @@index([name])
+  @@index([pinned, usageCount])
 }

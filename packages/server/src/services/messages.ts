@@ -37,6 +37,12 @@ export async function addCustomerMessage(
     }),
   ]);
 
+  // Start the "waiting for reply" clock if not already waiting.
+  await prisma.ticket.updateMany({
+    where: { id: ticketId, firstWaitingAt: null },
+    data: { firstWaitingAt: new Date() },
+  });
+
   bus.publish({ type: 'message:new', ticketId, message: serializeMessage(message) });
   // Push the refreshed ticket (unread count, ordering) to operators.
   const ticket = await getTicketById(ticketId);
@@ -67,10 +73,28 @@ export async function addOperatorMessage(
     text?: string | null;
     photo?: { buffer: Buffer; filename: string } | null;
     document?: { buffer: Buffer; filename: string } | null;
+    internal?: boolean;
   },
 ) {
   const ticket = await getTicketById(ticketId);
   if (!ticket) throw new Error('Ticket not found');
+
+  // Internal note: store for operators only, never delivered to the customer,
+  // and it does not answer the customer's wait.
+  if (data.internal) {
+    const note = await prisma.message.create({
+      data: {
+        ticketId,
+        sender: Sender.OPERATOR,
+        operatorId,
+        internal: true,
+        text: data.text ?? null,
+      },
+      include: { operator: true },
+    });
+    bus.publish({ type: 'message:new', ticketId, message: serializeMessage(note) });
+    return note;
+  }
 
   const chatId = ticket.customer.id.toString();
   let mediaType: IncomingMedia['type'] | null = null;
@@ -123,12 +147,15 @@ export async function addOperatorMessage(
     include: { operator: true },
   });
 
+  // Operator answered → stop the waiting clock.
   await prisma.ticket.update({
     where: { id: ticketId },
-    data: { lastMessageAt: new Date() },
+    data: { lastMessageAt: new Date(), firstWaitingAt: null },
   });
 
   bus.publish({ type: 'message:new', ticketId, message: serializeMessage(message) });
+  const updated = await getTicketById(ticketId);
+  if (updated) bus.publish({ type: 'ticket:updated', ticket: serializeTicket(updated) });
   return message;
 }
 

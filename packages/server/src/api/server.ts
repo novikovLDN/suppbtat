@@ -16,6 +16,7 @@ import { operatorRoutes } from './routes/operators.js';
 import { mediaRoutes } from './routes/media.js';
 import { pushRoutes } from './routes/push.js';
 import { templateRoutes } from './routes/templates.js';
+import { statsRoutes } from './routes/stats.js';
 import { websocketRoutes } from './ws.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -50,6 +51,7 @@ export async function buildServer() {
   await app.register(mediaRoutes);
   await app.register(pushRoutes);
   await app.register(templateRoutes);
+  await app.register(statsRoutes);
   await app.register(websocketRoutes);
 
   // Serve the built dashboard (single-service deploy) with SPA fallback.

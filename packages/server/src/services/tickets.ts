@@ -1,4 +1,4 @@
-import { Prisma, TicketStatus } from '@prisma/client';
+import { Prisma, TicketStatus, Priority } from '@prisma/client';
 import { prisma } from '../db.js';
 import { config } from '../config.js';
 import { bus } from './events.js';
@@ -84,6 +84,39 @@ export async function assignTicket(ticketId: number, operatorId: number, persona
   return ticket;
 }
 
+/** Transfer a ticket to another operator (no customer notice). */
+export async function transferTicket(ticketId: number, operatorId: number) {
+  const ticket = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { assignedOperatorId: operatorId },
+    include: ticketInclude,
+  });
+  bus.publish({ type: 'ticket:updated', ticket: serializeTicket(ticket) });
+  return ticket;
+}
+
+export async function updateTicketMeta(
+  ticketId: number,
+  data: { priority?: Priority; tags?: string[] },
+) {
+  const ticket = await prisma.ticket.update({
+    where: { id: ticketId },
+    data,
+    include: ticketInclude,
+  });
+  bus.publish({ type: 'ticket:updated', ticket: serializeTicket(ticket) });
+  return ticket;
+}
+
+/** The next open, unassigned ticket that has waited the longest. */
+export async function nextUnassignedTicket() {
+  return prisma.ticket.findFirst({
+    where: { status: TicketStatus.OPEN, assignedOperatorId: null },
+    orderBy: [{ firstWaitingAt: 'asc' }, { createdAt: 'asc' }],
+    include: ticketInclude,
+  });
+}
+
 /** Mark that the customer-facing "taken into work" notice has been sent (once per ticket). */
 export async function setClaimNotified(ticketId: number, personaName: string) {
   const ticket = await prisma.ticket.update({
@@ -149,6 +182,7 @@ export interface ListFilter {
   scope: 'all' | 'unassigned' | 'mine' | 'closed';
   operatorId?: number;
   search?: string;
+  sort?: 'recent' | 'waiting';
   limit?: number;
   cursor?: number; // ticket id for pagination
 }
@@ -181,6 +215,8 @@ export async function listTickets(filter: ListFilter) {
       { subject: { contains: s, mode: 'insensitive' } },
       { customer: { username: { contains: s, mode: 'insensitive' } } },
       { customer: { firstName: { contains: s, mode: 'insensitive' } } },
+      // full-text-ish search across message bodies
+      { messages: { some: { text: { contains: s, mode: 'insensitive' } } } },
     ];
     if (Number.isFinite(asNumber) && asNumber > 0) {
       // allow searching by display number (offset + id) or by raw id
@@ -189,10 +225,15 @@ export async function listTickets(filter: ListFilter) {
     }
   }
 
+  const orderBy: Prisma.TicketOrderByWithRelationInput[] =
+    filter.sort === 'waiting'
+      ? [{ firstWaitingAt: 'asc' }, { lastMessageAt: 'desc' }]
+      : [{ lastMessageAt: 'desc' }];
+
   const take = Math.min(filter.limit ?? 50, 100);
   const tickets = await prisma.ticket.findMany({
     where,
-    orderBy: [{ lastMessageAt: 'desc' }],
+    orderBy,
     take: take + 1,
     ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     include: ticketInclude,

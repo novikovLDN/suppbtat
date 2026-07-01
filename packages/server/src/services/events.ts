@@ -23,6 +23,9 @@ export interface SerializedTicket {
   assignedOperatorName: string | null;
   assignedName: string | null;
   subject: string | null;
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  tags: string[];
+  firstWaitingAt: string | null;
   customer: {
     id: string;
     username: string | null;
@@ -41,6 +44,7 @@ export interface SerializedMessage {
   sender: 'CUSTOMER' | 'OPERATOR' | 'SYSTEM';
   operatorId: number | null;
   operatorName: string | null;
+  internal: boolean;
   text: string | null;
   mediaType: string | null;
   mediaFileId: string | null;

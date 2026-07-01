@@ -1,15 +1,20 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { Priority } from '@prisma/client';
 import { requireAuth } from '../auth.js';
 import {
   listTickets,
   getTicketById,
   assignTicket,
   unassignTicket,
+  transferTicket,
+  updateTicketMeta,
+  nextUnassignedTicket,
   closeTicket,
   reopenTicket,
   markTicketRead,
   setClaimNotified,
+  listCustomerTickets,
   countsByScope,
 } from '../../services/tickets.js';
 import { listMessages, addOperatorMessage, addSystemMessage, notifyCustomer } from '../../services/messages.js';
@@ -21,9 +26,29 @@ import { logger } from '../../lib/logger.js';
 const listQuery = z.object({
   scope: z.enum(['all', 'unassigned', 'mine', 'closed']).default('all'),
   search: z.string().optional(),
+  sort: z.enum(['recent', 'waiting']).optional(),
   cursor: z.coerce.number().int().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
+
+type TicketRow = NonNullable<Awaited<ReturnType<typeof getTicketById>>>;
+
+/** Shared claim logic: assign to operator, choose persona, notify once. */
+async function claim(ticket: TicketRow, operatorId: number, operatorName: string, requested?: string) {
+  const persona = ticket.claimNotified
+    ? ticket.assignedName || randomPersona()
+    : requested && isValidPersona(requested)
+      ? requested
+      : randomPersona();
+
+  let updated = await assignTicket(ticket.id, operatorId, persona);
+  await addSystemMessage(ticket.id, `Взят в работу: ${operatorName} (как «${persona}»).`);
+  if (!ticket.claimNotified) {
+    await notifyCustomer(ticket.id, t.claimedNotice(persona)).catch(() => {});
+    updated = await setClaimNotified(ticket.id, persona);
+  }
+  return updated;
+}
 
 export async function ticketRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireAuth);
@@ -34,6 +59,7 @@ export async function ticketRoutes(app: FastifyInstance) {
       scope: q.scope,
       operatorId: req.operator!.sub,
       search: q.search,
+      sort: q.sort,
       cursor: q.cursor,
       limit: q.limit,
     });
@@ -46,7 +72,11 @@ export async function ticketRoutes(app: FastifyInstance) {
     const ticket = await getTicketById(id);
     if (!ticket) return reply.code(404).send({ error: 'Not found' });
     const messages = await listMessages(id);
-    return { ticket: serializeTicket(ticket), messages };
+    // customer's previous tickets (context)
+    const history = (await listCustomerTickets(ticket.customerId, 15))
+      .filter((h) => h.id !== id)
+      .map(serializeTicket);
+    return { ticket: serializeTicket(ticket), messages, history };
   });
 
   app.post('/api/tickets/:id/read', async (req, reply) => {
@@ -62,25 +92,45 @@ export async function ticketRoutes(app: FastifyInstance) {
     const ticket = await getTicketById(id);
     if (!ticket) return reply.code(404).send({ error: 'Not found' });
     if (ticket.status !== 'OPEN') return reply.code(409).send({ error: 'Ticket is closed' });
-
-    // Persona shown to the customer. Once notified, keep it stable; otherwise
-    // use the name chosen in the dashboard, falling back to a random one.
     const requested = (req.body as { name?: string } | undefined)?.name;
-    const persona = ticket.claimNotified
-      ? ticket.assignedName || randomPersona()
-      : requested && isValidPersona(requested)
-        ? requested
-        : randomPersona();
+    const updated = await claim(ticket, req.operator!.sub, req.operator!.name, requested);
+    return { ticket: serializeTicket(updated) };
+  });
 
-    // Always (re)assign to this operator; keep the persona consistent.
-    let updated = await assignTicket(id, req.operator!.sub, persona);
-    await addSystemMessage(id, `Взят в работу: ${req.operator!.name} (как «${persona}»).`);
+  // Take the single longest-waiting unassigned ticket.
+  app.post('/api/tickets/claim-next', async (req, reply) => {
+    const ticket = await nextUnassignedTicket();
+    if (!ticket) return reply.code(404).send({ error: 'Очередь пуста' });
+    const requested = (req.body as { name?: string } | undefined)?.name;
+    const updated = await claim(ticket, req.operator!.sub, req.operator!.name, requested);
+    return { ticket: serializeTicket(updated) };
+  });
 
-    // Customer-facing "taken into work" notice — exactly once per ticket.
-    if (!ticket.claimNotified) {
-      await notifyCustomer(id, t.claimedNotice(persona)).catch(() => {});
-      updated = await setClaimNotified(id, persona);
-    }
+  // Transfer to another operator.
+  app.post('/api/tickets/:id/transfer', async (req, reply) => {
+    const id = Number((req.params as { id: string }).id);
+    const body = z.object({ operatorId: z.number().int() }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: 'Invalid input' });
+    const ticket = await getTicketById(id);
+    if (!ticket) return reply.code(404).send({ error: 'Not found' });
+    const updated = await transferTicket(id, body.data.operatorId);
+    await addSystemMessage(id, `Передан оператору: ${updated.assignedOperator?.displayName ?? '—'}.`);
+    return { ticket: serializeTicket(updated) };
+  });
+
+  // Priority / tags.
+  app.patch('/api/tickets/:id/meta', async (req, reply) => {
+    const id = Number((req.params as { id: string }).id);
+    const body = z
+      .object({
+        priority: z.nativeEnum(Priority).optional(),
+        tags: z.array(z.string().min(1).max(24)).max(8).optional(),
+      })
+      .safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: 'Invalid input' });
+    const ticket = await getTicketById(id);
+    if (!ticket) return reply.code(404).send({ error: 'Not found' });
+    const updated = await updateTicketMeta(id, body.data);
     return { ticket: serializeTicket(updated) };
   });
 
@@ -112,20 +162,20 @@ export async function ticketRoutes(app: FastifyInstance) {
     return { ticket: serializeTicket(updated) };
   });
 
-  // Send a message to the customer. multipart/form-data: field "text" and/or file "file".
+  // Send a message to the customer, or add an internal note.
+  // multipart/form-data: fields "text", "internal"; file "file".
   app.post('/api/tickets/:id/messages', async (req, reply) => {
     const id = Number((req.params as { id: string }).id);
     const ticket = await getTicketById(id);
     if (!ticket) return reply.code(404).send({ error: 'Not found' });
-    if (ticket.status !== 'OPEN') return reply.code(409).send({ error: 'Ticket is closed' });
 
     let text: string | null = null;
+    let internal = false;
     let photo: { buffer: Buffer; filename: string } | null = null;
     let document: { buffer: Buffer; filename: string } | null = null;
 
     if (req.isMultipart()) {
-      const parts = req.parts();
-      for await (const part of parts) {
+      for await (const part of req.parts()) {
         if (part.type === 'file') {
           const buffer = await part.toBuffer();
           const isImage = (part.mimetype || '').startsWith('image/');
@@ -133,21 +183,35 @@ export async function ticketRoutes(app: FastifyInstance) {
           else document = { buffer, filename: part.filename || 'file' };
         } else if (part.fieldname === 'text') {
           text = String(part.value ?? '') || null;
+        } else if (part.fieldname === 'internal') {
+          internal = String(part.value) === 'true';
         }
       }
     } else {
-      const body = req.body as { text?: string } | undefined;
+      const body = req.body as { text?: string; internal?: boolean } | undefined;
       text = body?.text?.trim() || null;
+      internal = body?.internal === true;
     }
 
+    // Closed tickets accept internal notes but not customer messages.
+    if (!internal && ticket.status !== 'OPEN') {
+      return reply.code(409).send({ error: 'Ticket is closed' });
+    }
     if (!text && !photo && !document) {
       return reply.code(400).send({ error: 'Пустое сообщение' });
     }
+    if (internal && !text) {
+      return reply.code(400).send({ error: 'Заметка не может быть пустой' });
+    }
 
     try {
-      const message = await addOperatorMessage(id, req.operator!.sub, { text, photo, document });
-      // Auto-claim on first reply if unassigned, so it shows as "in work".
-      if (!ticket.assignedOperatorId) {
+      const message = await addOperatorMessage(id, req.operator!.sub, {
+        text,
+        photo,
+        document,
+        internal,
+      });
+      if (!internal && !ticket.assignedOperatorId) {
         await assignTicket(id, req.operator!.sub);
       }
       return { message };

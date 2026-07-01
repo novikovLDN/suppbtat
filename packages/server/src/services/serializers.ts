@@ -20,6 +20,9 @@ export function serializeTicket(t: TicketWithRelations): SerializedTicket {
     assignedOperatorName: t.assignedOperator?.displayName ?? null,
     assignedName: t.assignedName ?? null,
     subject: t.subject,
+    priority: t.priority,
+    tags: t.tags ?? [],
+    firstWaitingAt: t.firstWaitingAt ? t.firstWaitingAt.toISOString() : null,
     customer: {
       id: t.customer.id.toString(),
       username: t.customer.username,
@@ -42,6 +45,7 @@ export function serializeMessage(m: MessageWithOperator): SerializedMessage {
     sender: m.sender,
     operatorId: m.operatorId,
     operatorName: m.operator?.displayName ?? null,
+    internal: m.internal ?? false,
     text: m.text,
     mediaType: m.mediaType,
     mediaFileId: m.mediaFileId,
