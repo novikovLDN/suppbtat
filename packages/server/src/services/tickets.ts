@@ -117,6 +117,16 @@ export async function nextUnassignedTicket() {
   });
 }
 
+/** Ids of every open ticket (oldest first) — for bulk operations. */
+export async function openTicketIds(): Promise<number[]> {
+  const rows = await prisma.ticket.findMany({
+    where: { status: TicketStatus.OPEN },
+    orderBy: { id: 'asc' },
+    select: { id: true },
+  });
+  return rows.map((r) => r.id);
+}
+
 /** Mark that the customer-facing "taken into work" notice has been sent (once per ticket). */
 export async function setClaimNotified(ticketId: number, personaName: string) {
   const ticket = await prisma.ticket.update({

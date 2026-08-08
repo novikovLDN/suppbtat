@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { Priority } from '@prisma/client';
-import { requireAuth } from '../auth.js';
+import { requireAuth, requireAdmin } from '../auth.js';
 import {
   listTickets,
   getTicketById,
@@ -10,6 +10,7 @@ import {
   transferTicket,
   updateTicketMeta,
   nextUnassignedTicket,
+  openTicketIds,
   closeTicket,
   reopenTicket,
   markTicketRead,
@@ -50,8 +51,52 @@ async function claim(ticket: TicketRow, operatorId: number, operatorName: string
   return updated;
 }
 
+// Guard so a second "close all" can't run while one is in progress.
+let bulkClosing = false;
+
+/**
+ * Close every open ticket, notifying each customer. Runs in the background in
+ * batches of 20 per second to stay well under Telegram's send-rate limits.
+ */
+async function closeAllOpen(operatorName: string) {
+  if (bulkClosing) return;
+  bulkClosing = true;
+  try {
+    const ids = await openTicketIds();
+    logger.info(`close-all: closing ${ids.length} tickets (~20/s) by ${operatorName}`);
+    const BATCH = 20;
+    for (let i = 0; i < ids.length; i += BATCH) {
+      const batch = ids.slice(i, i + BATCH);
+      await Promise.all(
+        batch.map(async (id) => {
+          try {
+            await closeTicket(id);
+            await addSystemMessage(id, `Массовое закрытие: ${operatorName}.`);
+            await notifyCustomer(id, t.ticketClosedByOperator(id));
+          } catch (e) {
+            logger.warn(`close-all: failed on #${id}`, e);
+          }
+        }),
+      );
+      if (i + BATCH < ids.length) await new Promise((r) => setTimeout(r, 1000));
+    }
+    logger.info(`close-all: done (${ids.length})`);
+  } finally {
+    bulkClosing = false;
+  }
+}
+
 export async function ticketRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireAuth);
+
+  // Admin-only: close ALL open tickets. Fire-and-forget; progress streams over
+  // WebSocket as each ticket closes.
+  app.post('/api/tickets/close-all', { preHandler: requireAdmin }, async (req, reply) => {
+    if (bulkClosing) return reply.code(409).send({ error: 'Массовое закрытие уже выполняется' });
+    const ids = await openTicketIds();
+    void closeAllOpen(req.operator!.name);
+    return { started: ids.length };
+  });
 
   app.get('/api/tickets', async (req) => {
     const q = listQuery.parse(req.query);

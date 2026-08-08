@@ -98,6 +98,7 @@ export const api = {
   },
 
   getStats: () => request<Stats>('/api/stats'),
+  closeAll: () => request<{ started: number }>('/api/tickets/close-all', { method: 'POST' }),
 
   // Web Push
   getVapid: () => request<{ publicKey: string; enabled: boolean }>('/api/push/vapid'),

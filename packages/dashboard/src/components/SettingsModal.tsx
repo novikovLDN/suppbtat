@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Settings, Bell, Drama, Smartphone, Check, Share, Volume2 } from 'lucide-react';
+import { X, Settings, Bell, Drama, Smartphone, Check, Share, Volume2, AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import { OPERATOR_PERSONAS } from '../lib/personas';
 import { isSoundOn, setSoundOn, playChime } from '../lib/sound';
@@ -16,10 +16,12 @@ export function SettingsModal({
   onClose,
   persona,
   onPersonaChange,
+  isAdmin = false,
 }: {
   onClose: () => void;
   persona: string;
   onPersonaChange: (v: string) => void;
+  isAdmin?: boolean;
 }) {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -28,6 +30,7 @@ export function SettingsModal({
   const [testMsg, setTestMsg] = useState('');
   const [testing, setTesting] = useState(false);
   const [sound, setSound] = useState(isSoundOn());
+  const [openCount, setOpenCount] = useState<number | null>(null);
 
   const blocked = pushBlockedReason();
   const needsInstall = isIOS() && !isStandalone();
@@ -36,7 +39,8 @@ export function SettingsModal({
     getActiveSubscription()
       .then((s) => setEnabled(!!s))
       .finally(() => setChecked(true));
-  }, []);
+    if (isAdmin) api.getStats().then((s) => setOpenCount(s.open)).catch(() => {});
+  }, [isAdmin]);
 
   const toggle = async () => {
     if (busy) return;
@@ -212,6 +216,9 @@ export function SettingsModal({
             </div>
           </div>
 
+          {/* Danger zone — admin only */}
+          {isAdmin && <DangerZone openCount={openCount} />}
+
           {/* PWA hint */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 text-xs text-slate-400">
             <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-100">
@@ -225,6 +232,94 @@ export function SettingsModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DangerZone({ openCount }: { openCount: number | null }) {
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState('');
+  const [err, setErr] = useState('');
+
+  const reset = () => {
+    setStep(0);
+    setErr('');
+  };
+
+  const run = async () => {
+    setRunning(true);
+    setErr('');
+    try {
+      const r = await api.closeAll();
+      setResult(`Закрываю ${r.started} тикетов (~20/сек). Список обновится автоматически.`);
+      setStep(0);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Ошибка');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-rose-300">
+        <AlertTriangle size={16} /> Опасная зона
+      </div>
+      <p className="mt-1 text-xs text-slate-400">
+        Закрыть сразу все открытые тикеты{openCount != null ? ` (${openCount})` : ''}. Каждому клиенту
+        уйдёт уведомление о закрытии; закрытие идёт по ~20 в секунду.
+      </p>
+
+      {result && <div className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">{result}</div>}
+      {err && <div className="mt-3 rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-300">{err}</div>}
+
+      {step === 0 && (
+        <button
+          onClick={() => setStep(1)}
+          disabled={openCount === 0}
+          className="mt-3 w-full rounded-xl border border-rose-500/30 bg-rose-500/10 py-2.5 text-sm font-medium text-rose-300 transition hover:bg-rose-500/20 active:scale-[0.98] disabled:opacity-40"
+        >
+          Закрыть все тикеты
+        </button>
+      )}
+
+      {step === 1 && (
+        <div className="mt-3 space-y-2">
+          <div className="text-xs text-slate-300">
+            Закрыть все {openCount ?? ''} открытых тикетов? Все клиенты получат уведомление.
+          </div>
+          <div className="flex gap-2">
+            <button onClick={reset} className="tile tile-hover flex-1 rounded-xl py-2 text-xs font-medium text-slate-200 transition">
+              Отмена
+            </button>
+            <button
+              onClick={() => setStep(2)}
+              className="flex-1 rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
+            >
+              Продолжить
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="mt-3 space-y-2">
+          <div className="text-xs font-medium text-rose-300">Точно? Действие необратимо.</div>
+          <div className="flex gap-2">
+            <button onClick={reset} className="tile tile-hover flex-1 rounded-xl py-2 text-xs font-medium text-slate-200 transition">
+              Отмена
+            </button>
+            <button
+              onClick={run}
+              disabled={running}
+              className="flex-1 rounded-xl bg-rose-500 py-2 text-xs font-semibold text-white transition hover:bg-rose-400 active:scale-[0.98] disabled:opacity-50"
+            >
+              {running ? 'Запуск…' : 'Да, закрыть всё'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

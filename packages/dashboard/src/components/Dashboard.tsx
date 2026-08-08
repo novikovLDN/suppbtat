@@ -160,6 +160,7 @@ export function Dashboard() {
           onClose={() => setSettingsOpen(false)}
           persona={persona}
           onPersonaChange={changePersona}
+          isAdmin={operator!.role === 'ADMIN'}
         />
       )}
       {analyticsOpen && <AnalyticsModal onClose={() => setAnalyticsOpen(false)} />}
