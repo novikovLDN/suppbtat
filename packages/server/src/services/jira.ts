@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { Prisma, JiraStatus, Sender } from '@prisma/client';
 import { prisma } from '../db.js';
 import { bus } from './events.js';
@@ -8,6 +9,29 @@ import { t } from '../bot/texts.js';
 const jiraInclude = {
   ticket: { include: { customer: true } },
 } satisfies Prisma.JiraTaskInclude;
+
+/**
+ * A unique, human-friendly Jira key with a 4–7 digit number (e.g. "JIRA-48213").
+ * Tries progressively wider ranges and checks the DB for collisions.
+ */
+async function generateUniqueKey(): Promise<string> {
+  const ranges: Array<[number, number]> = [
+    [1000, 9999], // 4 digits
+    [10000, 99999], // 5
+    [100000, 999999], // 6
+    [1000000, 9999999], // 7
+  ];
+  for (let attempt = 0; attempt < 40; attempt++) {
+    // widen the range as attempts grow so we don't exhaust small pools
+    const [min, max] = ranges[Math.min(1 + Math.floor(attempt / 8), ranges.length - 1)];
+    const n = crypto.randomInt(min, max + 1);
+    const key = `JIRA-${n}`;
+    const exists = await prisma.jiraTask.findUnique({ where: { key }, select: { id: true } });
+    if (!exists) return key;
+  }
+  // Extremely unlikely fallback: timestamp-derived 7-digit number.
+  return `JIRA-${(Date.now() % 9000000) + 1000000}`;
+}
 
 /**
  * Build a problem summary + description from the chat context: the earliest
@@ -44,10 +68,10 @@ export async function createJiraTask(input: {
 }) {
   const { title, description } = await buildContext(input.ticketId);
 
-  // Create, then stamp a human key derived from the auto-increment id.
-  const created = await prisma.jiraTask.create({
+  const key = await generateUniqueKey();
+  const task = await prisma.jiraTask.create({
     data: {
-      key: '',
+      key,
       ticketId: input.ticketId,
       title,
       description,
@@ -56,10 +80,6 @@ export async function createJiraTask(input: {
       createdById: input.createdById,
       createdByName: input.createdByName,
     },
-  });
-  const task = await prisma.jiraTask.update({
-    where: { id: created.id },
-    data: { key: `JIRA-${created.id}` },
     include: jiraInclude,
   });
 
@@ -97,6 +117,18 @@ export async function updateJiraStatus(id: number, status: JiraStatus) {
     include: jiraInclude,
   });
   bus.publish({ type: 'jira:updated', task: serializeJiraTask(task) });
+  return task;
+}
+
+/** Tell the customer their Jira task is done (best-effort) + record a system note. */
+export async function notifyJiraDone(id: number, byName: string) {
+  const task = await prisma.jiraTask.findUnique({ where: { id }, include: jiraInclude });
+  if (!task) return null;
+  await notifyCustomer(task.ticketId, t.jiraDoneForCustomer(task.key)).catch(() => {});
+  await addSystemMessage(
+    task.ticketId,
+    `Клиент уведомлён о завершении задачи ${task.key} (${byName}).`,
+  ).catch(() => {});
   return task;
 }
 

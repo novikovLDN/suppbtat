@@ -259,6 +259,14 @@ export function useChatStore(operator: Operator) {
     [upsertJira],
   );
 
+  const notifyJiraDone = useCallback(
+    async (id: number) => {
+      const r = await api.notifyJiraDone(id);
+      upsertJira(r.task);
+    },
+    [upsertJira],
+  );
+
   return {
     scope,
     setScope,
@@ -286,6 +294,7 @@ export function useChatStore(operator: Operator) {
     setMeta,
     createJira,
     updateJira,
+    notifyJiraDone,
     release: () => doAction('release'),
     close: () => doAction('close'),
     reopen: () => doAction('reopen'),

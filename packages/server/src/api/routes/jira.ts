@@ -7,6 +7,7 @@ import {
   createJiraTask,
   listJiraTasks,
   updateJiraStatus,
+  notifyJiraDone,
   getJiraTask,
 } from '../../services/jira.js';
 import { serializeJiraTask } from '../../services/serializers.js';
@@ -17,9 +18,15 @@ const createSchema = z.object({
   notify: z.boolean().optional(),
 });
 
-const statusSchema = z.object({
-  status: z.nativeEnum(JiraStatus),
-});
+const patchSchema = z
+  .object({
+    status: z.nativeEnum(JiraStatus).optional(),
+    // notify the customer that the task is done
+    notify: z.boolean().optional(),
+  })
+  .refine((d) => d.status !== undefined || d.notify !== undefined, {
+    message: 'Nothing to update',
+  });
 
 export async function jiraRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireAuth);
@@ -48,14 +55,23 @@ export async function jiraRoutes(app: FastifyInstance) {
     return { task: serializeJiraTask(task) };
   });
 
-  // Move a task between statuses on the board.
+  // Move a task between statuses on the board, and/or notify the customer of
+  // completion.
   app.patch('/api/jira/:id', async (req, reply) => {
     const id = Number((req.params as { id: string }).id);
-    const parsed = statusSchema.safeParse(req.body);
+    const parsed = patchSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'Invalid input' });
     const existing = await getJiraTask(id);
     if (!existing) return reply.code(404).send({ error: 'Задача не найдена' });
-    const task = await updateJiraStatus(id, parsed.data.status);
+
+    let task = existing;
+    if (parsed.data.status !== undefined) {
+      task = await updateJiraStatus(id, parsed.data.status);
+    }
+    if (parsed.data.notify) {
+      const notified = await notifyJiraDone(id, req.operator!.name);
+      if (notified) task = notified;
+    }
     return { task: serializeJiraTask(task) };
   });
 }

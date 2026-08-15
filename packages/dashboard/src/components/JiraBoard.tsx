@@ -10,6 +10,9 @@ import {
   ChevronLeft,
   Clock,
   User,
+  BellRing,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { JiraStatus, JiraTask } from '../types';
@@ -173,6 +176,7 @@ export function JiraBoard({ store, onClose, onOpenChat }: Props) {
           task={liveDetail}
           onClose={() => setDetail(null)}
           onMove={store.updateJira}
+          onNotifyDone={() => store.notifyJiraDone(liveDetail.id)}
           onGoToChat={() => goToChat(liveDetail.ticketId)}
         />
       )}
@@ -299,15 +303,31 @@ function JiraDetail({
   task,
   onClose,
   onMove,
+  onNotifyDone,
   onGoToChat,
 }: {
   task: JiraTask;
   onClose: () => void;
   onMove: (id: number, s: JiraStatus) => void;
+  onNotifyDone: () => Promise<void>;
   onGoToChat: () => void;
 }) {
   const m = jiraStatusMeta(task.status);
   const pr = priorityMeta(task.priority);
+  const [notifying, setNotifying] = useState(false);
+  const [notified, setNotified] = useState(false);
+
+  const notifyDone = async () => {
+    setNotifying(true);
+    try {
+      await onNotifyDone();
+      setNotified(true);
+    } catch {
+      /* surfaced elsewhere; keep button usable */
+    } finally {
+      setNotifying(false);
+    }
+  };
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 pb-safe backdrop-blur-sm animate-overlay sm:items-center sm:p-4" onClick={onClose}>
       <div
@@ -413,8 +433,33 @@ function JiraDetail({
           </div>
         </div>
 
-        {/* Go to chat */}
-        <div className="shrink-0 border-t border-white/[0.06] p-4">
+        {/* Footer actions */}
+        <div className="shrink-0 space-y-2 border-t border-white/[0.06] p-4">
+          {task.status === 'DONE' && (
+            <button
+              onClick={notifyDone}
+              disabled={notifying || notified}
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition active:scale-[0.98] ${
+                notified
+                  ? 'bg-emerald-500/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/20'
+                  : 'bg-white/[0.05] text-slate-200 ring-1 ring-inset ring-white/10 hover:bg-white/[0.08]'
+              } disabled:cursor-default`}
+            >
+              {notified ? (
+                <>
+                  <CheckCircle2 size={16} /> Клиент уведомлён
+                </>
+              ) : notifying ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Отправка…
+                </>
+              ) : (
+                <>
+                  <BellRing size={16} /> Уведомить клиента о завершении
+                </>
+              )}
+            </button>
+          )}
           <button
             onClick={onGoToChat}
             className="accent flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98]"

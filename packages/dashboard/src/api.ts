@@ -130,6 +130,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
+  notifyJiraDone: (id: number) =>
+    request<{ task: JiraTask }>(`/api/jira/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notify: true }),
+    }),
 
   listOperators: () => request<{ operators: Operator[] }>('/api/operators'),
   createOperator: (data: { username: string; password: string; displayName: string; role: string }) =>
