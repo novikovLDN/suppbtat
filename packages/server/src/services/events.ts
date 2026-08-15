@@ -13,6 +13,8 @@ export type AppEvent =
   | { type: 'ticket:new'; ticket: SerializedTicket }
   | { type: 'ticket:updated'; ticket: SerializedTicket }
   | { type: 'message:new'; ticketId: number; message: SerializedMessage }
+  | { type: 'jira:new'; task: SerializedJiraTask }
+  | { type: 'jira:updated'; task: SerializedJiraTask }
   | { type: 'presence'; operators: PresenceInfo[] };
 
 export interface SerializedTicket {
@@ -50,6 +52,29 @@ export interface SerializedMessage {
   mediaFileId: string | null;
   fileName: string | null;
   createdAt: string;
+}
+
+export interface SerializedJiraTask {
+  id: number;
+  key: string;
+  ticketId: number;
+  ticketNumber: number;
+  ticketStatus: 'OPEN' | 'CLOSED';
+  title: string;
+  description: string | null;
+  comment: string | null;
+  status: 'WAITING' | 'IN_PROGRESS' | 'DONE';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  tags: string[];
+  createdByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+  };
 }
 
 export interface PresenceInfo {

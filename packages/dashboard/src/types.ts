@@ -83,8 +83,30 @@ export interface Stats {
 export type Scope = 'all' | 'unassigned' | 'mine' | 'closed';
 export type SortMode = 'recent' | 'waiting';
 
+export type JiraStatus = 'WAITING' | 'IN_PROGRESS' | 'DONE';
+
+export interface JiraTask {
+  id: number;
+  key: string;
+  ticketId: number;
+  ticketNumber: number;
+  ticketStatus: TicketStatus;
+  title: string;
+  description: string | null;
+  comment: string | null;
+  status: JiraStatus;
+  priority: Priority;
+  tags: string[];
+  createdByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  customer: Customer;
+}
+
 export type WsEvent =
   | { type: 'ready'; operator: { id: number; name: string } }
   | { type: 'ticket:new'; ticket: Ticket }
   | { type: 'ticket:updated'; ticket: Ticket }
-  | { type: 'message:new'; ticketId: number; message: Message };
+  | { type: 'message:new'; ticketId: number; message: Message }
+  | { type: 'jira:new'; task: JiraTask }
+  | { type: 'jira:updated'; task: JiraTask };

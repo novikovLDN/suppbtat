@@ -22,6 +22,7 @@ model Operator {
   assignedTickets Ticket[]  @relation("AssignedOperator")
   messages        Message[]
   pushSubscriptions PushSubscription[]
+  jiraTasks       JiraTask[]
 
   @@index([isActive])
 }
@@ -77,7 +78,8 @@ model Ticket {
   // when the current unanswered wait started (null = answered / no pending wait)
   firstWaitingAt DateTime?
 
-  messages Message[]
+  messages  Message[]
+  jiraTasks JiraTask[]
 
   // Fast lookups: the customer's currently-open ticket, queue ordering, filters.
   @@index([customerId, status])
@@ -154,4 +156,38 @@ model Template {
 
   @@index([name])
   @@index([pinned, usageCount])
+}
+
+/// An internal Jira-style task raised from a support ticket. Not connected to a
+/// real Atlassian instance — a lightweight board that lives in this dashboard.
+model JiraTask {
+  id       Int    @id @default(autoincrement())
+  key      String @unique // human key, e.g. "JIRA-42"
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId Int
+
+  // Problem summary + fuller context lifted from the chat.
+  title       String
+  description String? @db.Text
+  // Operator's comment captured when the task is created.
+  comment     String? @db.Text
+
+  status JiraStatus @default(WAITING)
+
+  createdBy     Operator? @relation(fields: [createdById], references: [id])
+  createdById   Int?
+  createdByName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([ticketId])
+}
+
+enum JiraStatus {
+  WAITING
+  IN_PROGRESS
+  DONE
 }

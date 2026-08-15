@@ -11,6 +11,8 @@ import {
   ArrowRightLeft,
   Flag,
   Plus,
+  SquareKanban,
+  ExternalLink,
 } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Operator, Priority, Ticket } from '../types';
@@ -20,6 +22,7 @@ import {
   customerName,
   dateTime,
   initials,
+  jiraStatusMeta,
   priorityMeta,
   PRIORITIES,
   statusBadge,
@@ -32,15 +35,16 @@ interface Props {
   persona: string;
   operators: Operator[];
   onClose?: () => void;
+  onOpenBoard?: () => void;
 }
 
-export function InfoPanel({ store, variant, persona, operators, onClose }: Props) {
+export function InfoPanel({ store, variant, persona, operators, onClose, onOpenBoard }: Props) {
   const t = store.selected;
 
   if (variant === 'column') {
     return (
       <aside className="panel hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-[26px] xl:flex">
-        {t ? <Body store={store} persona={persona} operators={operators} /> : null}
+        {t ? <Body store={store} persona={persona} operators={operators} onOpenBoard={onOpenBoard} /> : null}
       </aside>
     );
   }
@@ -59,13 +63,23 @@ export function InfoPanel({ store, variant, persona, operators, onClose }: Props
         >
           <X size={16} />
         </button>
-        {t ? <Body store={store} persona={persona} operators={operators} /> : null}
+        {t ? <Body store={store} persona={persona} operators={operators} onOpenBoard={onOpenBoard} /> : null}
       </aside>
     </div>
   );
 }
 
-function Body({ store, persona, operators }: { store: ChatStore; persona: string; operators: Operator[] }) {
+function Body({
+  store,
+  persona,
+  operators,
+  onOpenBoard,
+}: {
+  store: ChatStore;
+  persona: string;
+  operators: Operator[];
+  onOpenBoard?: () => void;
+}) {
   const t = store.selected!;
   const badge = statusBadge(t);
   const open = t.status === 'OPEN';
@@ -200,6 +214,9 @@ function Body({ store, persona, operators }: { store: ChatStore; persona: string
         )}
       </div>
 
+      {/* Jira tasks */}
+      <JiraSection store={store} ticket={t} onOpenBoard={onOpenBoard} />
+
       {/* Attachments gallery */}
       {photos.length > 0 && (
         <div className="border-t border-white/[0.06] p-4">
@@ -237,6 +254,119 @@ function Body({ store, persona, operators }: { store: ChatStore; persona: string
 
 function shortPriority(p: Priority): string {
   return { LOW: 'Низкий', NORMAL: 'Обычн.', HIGH: 'Высок.', URGENT: 'Срочно' }[p];
+}
+
+function JiraSection({
+  store,
+  ticket,
+  onOpenBoard,
+}: {
+  store: ChatStore;
+  ticket: Ticket;
+  onOpenBoard?: () => void;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [comment, setComment] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const tasks = store.jiraTasks.filter((j) => j.ticketId === ticket.id);
+
+  const submit = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await store.createJira(ticket.id, comment.trim() || undefined);
+      setComment('');
+      setCreating(false);
+    } catch (e) {
+      setError((e as Error).message || 'Не удалось создать задачу');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-white/[0.06] p-4">
+      <div className="label mb-2 flex items-center justify-between text-[10px] text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <SquareKanban size={11} /> Jira
+        </span>
+        {onOpenBoard && (
+          <button
+            onClick={onOpenBoard}
+            className="flex items-center gap-1 text-[10px] font-medium text-indigo-300 transition hover:text-indigo-200"
+          >
+            Открыть доску <ExternalLink size={10} />
+          </button>
+        )}
+      </div>
+
+      {tasks.length > 0 && (
+        <div className="mb-2 space-y-1">
+          {tasks.map((j) => {
+            const m = jiraStatusMeta(j.status);
+            return (
+              <div
+                key={j.id}
+                className="flex items-center justify-between gap-2 rounded-xl bg-white/[0.03] px-2.5 py-2"
+              >
+                <span className="font-mono text-[11px] font-semibold text-slate-300">{j.key}</span>
+                <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${m.chip}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} />
+                  {m.short}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!creating ? (
+        <button
+          onClick={() => setCreating(true)}
+          className="tile tile-hover flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium text-slate-200 transition active:scale-[0.98]"
+        >
+          <SquareKanban size={15} /> Создать задачу в Jira
+        </button>
+      ) : (
+        <div className="animate-scale-in space-y-2 rounded-2xl bg-white/[0.03] p-2.5">
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            autoFocus
+            placeholder="Комментарий к задаче (что нужно сделать / детали проблемы)…"
+            className="tile w-full resize-none rounded-xl px-3 py-2 text-[13px] text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
+          />
+          {error && <p className="text-[11px] text-rose-400">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setCreating(false);
+                setComment('');
+                setError(null);
+              }}
+              disabled={busy}
+              className="flex-1 rounded-xl bg-white/[0.05] py-2 text-[13px] font-medium text-slate-300 transition hover:bg-white/[0.08] disabled:opacity-50"
+            >
+              Отмена
+            </button>
+            <button
+              onClick={submit}
+              disabled={busy}
+              className="accent flex-1 rounded-xl py-2 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
+            >
+              {busy ? 'Создание…' : 'Создать'}
+            </button>
+          </div>
+          <p className="text-center text-[10px] text-slate-500">
+            Описание проблемы возьмётся из переписки автоматически.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function HistoryRow({ h, onOpen }: { h: Ticket; onOpen: () => void }) {

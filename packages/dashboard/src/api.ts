@@ -1,4 +1,4 @@
-import type { Counts, Message, Operator, Priority, Scope, SortMode, Stats, Template, Ticket } from './types';
+import type { Counts, JiraStatus, JiraTask, Message, Operator, Priority, Scope, SortMode, Stats, Template, Ticket } from './types';
 
 const TOKEN_KEY = 'atlas_token';
 
@@ -117,6 +117,19 @@ export const api = {
     request<{ template: Template }>(`/api/templates/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   useTemplate: (id: number) => request<{ ok: true }>(`/api/templates/${id}/used`, { method: 'POST' }),
   deleteTemplate: (id: number) => request<{ ok: true }>(`/api/templates/${id}`, { method: 'DELETE' }),
+
+  // Jira board (internal task tracker)
+  listJira: () => request<{ tasks: JiraTask[] }>('/api/jira'),
+  createJira: (ticketId: number, comment?: string) =>
+    request<{ task: JiraTask }>('/api/jira', {
+      method: 'POST',
+      body: JSON.stringify({ ticketId, ...(comment ? { comment } : {}) }),
+    }),
+  updateJiraStatus: (id: number, status: JiraStatus) =>
+    request<{ task: JiraTask }>(`/api/jira/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 
   listOperators: () => request<{ operators: Operator[] }>('/api/operators'),
   createOperator: (data: { username: string; password: string; displayName: string; role: string }) =>

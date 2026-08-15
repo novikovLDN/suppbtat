@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield, Settings, Users, LogOut, BarChart3 } from 'lucide-react';
+import { Shield, Settings, Users, LogOut, BarChart3, SquareKanban } from 'lucide-react';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
 import { api } from '../api';
@@ -11,6 +11,7 @@ import { InfoPanel } from './InfoPanel';
 import { AdminPanel } from './AdminPanel';
 import { SettingsModal } from './SettingsModal';
 import { AnalyticsModal } from './AnalyticsModal';
+import { JiraBoard } from './JiraBoard';
 
 export function Dashboard() {
   const { operator, logout } = useAuth();
@@ -18,6 +19,7 @@ export function Dashboard() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [jiraOpen, setJiraOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [persona, setPersonaState] = useState(getPersona());
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -33,6 +35,7 @@ export function Dashboard() {
 
   const hasSelection = store.selectedId !== null;
   const { selectTicket } = store;
+  const jiraActive = store.jiraTasks.filter((j) => j.status !== 'DONE').length;
 
   // Open a ticket from a push-notification tap (?ticket= or SW message).
   useEffect(() => {
@@ -83,6 +86,19 @@ export function Dashboard() {
             />
             <span className="hidden sm:inline">{store.connected ? 'Онлайн' : 'Оффлайн'}</span>
           </span>
+
+          <button
+            onClick={() => setJiraOpen(true)}
+            className="tile tile-hover relative flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
+            title="Доска Jira"
+          >
+            <SquareKanban size={17} />
+            {jiraActive > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-500 px-1 text-[9px] font-semibold text-white">
+                {jiraActive}
+              </span>
+            )}
+          </button>
 
           <button
             onClick={() => setAnalyticsOpen(true)}
@@ -143,7 +159,13 @@ export function Dashboard() {
         />
 
         {/* Info: static column on xl, slide-over drawer below xl */}
-        <InfoPanel store={store} persona={persona} operators={operators} variant="column" />
+        <InfoPanel
+          store={store}
+          persona={persona}
+          operators={operators}
+          variant="column"
+          onOpenBoard={() => setJiraOpen(true)}
+        />
         {infoOpen && hasSelection && (
           <InfoPanel
             store={store}
@@ -151,6 +173,10 @@ export function Dashboard() {
             operators={operators}
             variant="drawer"
             onClose={() => setInfoOpen(false)}
+            onOpenBoard={() => {
+              setInfoOpen(false);
+              setJiraOpen(true);
+            }}
           />
         )}
       </div>
@@ -164,6 +190,13 @@ export function Dashboard() {
         />
       )}
       {analyticsOpen && <AnalyticsModal onClose={() => setAnalyticsOpen(false)} />}
+      {jiraOpen && (
+        <JiraBoard
+          store={store}
+          onClose={() => setJiraOpen(false)}
+          onOpenChat={(ticketId) => selectTicket(ticketId).catch(() => {})}
+        />
+      )}
       {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
     </div>
   );

@@ -1,6 +1,6 @@
-import type { Ticket, Customer, Operator, Message } from '@prisma/client';
+import type { Ticket, Customer, Operator, Message, JiraTask } from '@prisma/client';
 import { config } from '../config.js';
-import type { SerializedTicket, SerializedMessage } from './events.js';
+import type { SerializedTicket, SerializedMessage, SerializedJiraTask } from './events.js';
 
 export function ticketNumber(id: number): number {
   return config.ticketNumberOffset + id;
@@ -33,6 +33,35 @@ export function serializeTicket(t: TicketWithRelations): SerializedTicket {
     lastMessageAt: t.lastMessageAt.toISOString(),
     createdAt: t.createdAt.toISOString(),
     closedAt: t.closedAt ? t.closedAt.toISOString() : null,
+  };
+}
+
+type JiraWithRelations = JiraTask & {
+  ticket: Ticket & { customer: Customer };
+};
+
+export function serializeJiraTask(j: JiraWithRelations): SerializedJiraTask {
+  return {
+    id: j.id,
+    key: j.key,
+    ticketId: j.ticketId,
+    ticketNumber: ticketNumber(j.ticketId),
+    ticketStatus: j.ticket.status,
+    title: j.title,
+    description: j.description,
+    comment: j.comment,
+    status: j.status,
+    priority: j.ticket.priority,
+    tags: j.ticket.tags ?? [],
+    createdByName: j.createdByName ?? null,
+    createdAt: j.createdAt.toISOString(),
+    updatedAt: j.updatedAt.toISOString(),
+    customer: {
+      id: j.ticket.customer.id.toString(),
+      username: j.ticket.customer.username,
+      firstName: j.ticket.customer.firstName,
+      lastName: j.ticket.customer.lastName,
+    },
   };
 }
 

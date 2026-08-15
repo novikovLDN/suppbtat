@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, wsUrl } from './api';
 import { playChime } from './lib/sound';
-import type { Counts, Message, Operator, Priority, Scope, SortMode, Ticket, WsEvent } from './types';
+import type {
+  Counts,
+  JiraStatus,
+  JiraTask,
+  Message,
+  Operator,
+  Priority,
+  Scope,
+  SortMode,
+  Ticket,
+  WsEvent,
+} from './types';
 
 function scopeMatches(t: Ticket, scope: Scope, operatorId: number): boolean {
   switch (scope) {
@@ -42,6 +53,7 @@ export function useChatStore(operator: Operator) {
   const [connected, setConnected] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [jiraTasks, setJiraTasks] = useState<JiraTask[]>([]);
 
   const selectedIdRef = useRef<number | null>(null);
   selectedIdRef.current = selectedId;
@@ -56,6 +68,18 @@ export function useChatStore(operator: Operator) {
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 20000);
     return () => clearInterval(id);
+  }, []);
+
+  // load the Jira board once
+  useEffect(() => {
+    api.listJira().then((r) => setJiraTasks(r.tasks)).catch(() => {});
+  }, []);
+
+  const upsertJira = useCallback((task: JiraTask) => {
+    setJiraTasks((prev) => {
+      const without = prev.filter((x) => x.id !== task.id);
+      return [task, ...without].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    });
   }, []);
 
   const refreshList = useCallback(async () => {
@@ -129,6 +153,8 @@ export function useChatStore(operator: Operator) {
               prev.some((m) => m.id === data.message.id) ? prev : [...prev, data.message],
             );
           }
+        } else if (data.type === 'jira:new' || data.type === 'jira:updated') {
+          upsertJira(data.task);
         }
       };
     };
@@ -138,7 +164,7 @@ export function useChatStore(operator: Operator) {
       if (retry) clearTimeout(retry);
       ws?.close();
     };
-  }, [upsertLocal, scheduleReconcile]);
+  }, [upsertLocal, scheduleReconcile, upsertJira]);
 
   const selectTicket = useCallback(async (id: number) => {
     setSelectedId(id);
@@ -214,6 +240,25 @@ export function useChatStore(operator: Operator) {
     [upsertLocal],
   );
 
+  const createJira = useCallback(
+    async (ticketId: number, comment?: string) => {
+      const r = await api.createJira(ticketId, comment);
+      upsertJira(r.task);
+      return r.task;
+    },
+    [upsertJira],
+  );
+
+  const updateJira = useCallback(
+    async (id: number, status: JiraStatus) => {
+      // optimistic
+      setJiraTasks((prev) => prev.map((x) => (x.id === id ? { ...x, status } : x)));
+      const r = await api.updateJiraStatus(id, status);
+      upsertJira(r.task);
+    },
+    [upsertJira],
+  );
+
   return {
     scope,
     setScope,
@@ -230,6 +275,7 @@ export function useChatStore(operator: Operator) {
     connected,
     loadingList,
     now,
+    jiraTasks,
     selectTicket,
     deselect,
     sendMessage,
@@ -238,6 +284,8 @@ export function useChatStore(operator: Operator) {
     claimNext,
     transfer,
     setMeta,
+    createJira,
+    updateJira,
     release: () => doAction('release'),
     close: () => doAction('close'),
     reopen: () => doAction('reopen'),

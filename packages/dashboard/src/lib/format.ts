@@ -1,4 +1,4 @@
-import type { Customer, Priority, Ticket } from '../types';
+import type { Customer, JiraStatus, Priority, Ticket } from '../types';
 
 export function customerName(c: Customer): string {
   const name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
@@ -122,3 +122,45 @@ export function priorityMeta(p: Priority): PriorityMeta {
 }
 
 export const PRIORITIES: Priority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+
+export interface JiraStatusMeta {
+  key: JiraStatus;
+  label: string;
+  short: string;
+  dot: string;
+  chip: string;
+  column: string; // subtle column header accent
+}
+
+const JIRA_META: Record<JiraStatus, JiraStatusMeta> = {
+  WAITING: {
+    key: 'WAITING',
+    label: 'Ожидает решения',
+    short: 'Ожидает',
+    dot: 'bg-amber-400',
+    chip: 'bg-amber-400/10 text-amber-300 ring-1 ring-inset ring-amber-400/20',
+    column: 'text-amber-300',
+  },
+  IN_PROGRESS: {
+    key: 'IN_PROGRESS',
+    label: 'В процессе',
+    short: 'В процессе',
+    dot: 'bg-sky-400',
+    chip: 'bg-sky-400/10 text-sky-300 ring-1 ring-inset ring-sky-400/20',
+    column: 'text-sky-300',
+  },
+  DONE: {
+    key: 'DONE',
+    label: 'Завершён',
+    short: 'Завершён',
+    dot: 'bg-emerald-400',
+    chip: 'bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-400/20',
+    column: 'text-emerald-300',
+  },
+};
+
+export function jiraStatusMeta(s: JiraStatus): JiraStatusMeta {
+  return JIRA_META[s];
+}
+
+export const JIRA_STATUSES: JiraStatus[] = ['WAITING', 'IN_PROGRESS', 'DONE'];
