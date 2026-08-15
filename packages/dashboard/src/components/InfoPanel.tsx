@@ -13,6 +13,8 @@ import {
   Plus,
   SquareKanban,
   ExternalLink,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Operator, Priority, Ticket } from '../types';
@@ -267,18 +269,25 @@ function JiraSection({
 }) {
   const [creating, setCreating] = useState(false);
   const [comment, setComment] = useState('');
+  const [notify, setNotify] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const tasks = store.jiraTasks.filter((j) => j.ticketId === ticket.id);
 
+  const reset = () => {
+    setCreating(false);
+    setComment('');
+    setNotify(false);
+    setError(null);
+  };
+
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
-      await store.createJira(ticket.id, comment.trim() || undefined);
-      setComment('');
-      setCreating(false);
+      await store.createJira(ticket.id, comment.trim() || undefined, notify);
+      reset();
     } catch (e) {
       setError((e as Error).message || 'Не удалось создать задачу');
     } finally {
@@ -339,14 +348,43 @@ function JiraSection({
             placeholder="Комментарий к задаче (что нужно сделать / детали проблемы)…"
             className="tile w-full resize-none rounded-xl px-3 py-2 text-[13px] text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/40 focus:ring-4 focus:ring-indigo-500/10"
           />
+
+          {/* Notify the customer? Off by default. */}
+          <button
+            type="button"
+            onClick={() => setNotify((v) => !v)}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-white/[0.03] px-3 py-2 text-left transition hover:bg-white/[0.05]"
+          >
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition ${
+                notify ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.05] text-slate-500'
+              }`}
+            >
+              {notify ? <Bell size={14} /> : <BellOff size={14} />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12px] font-medium text-slate-200">Уведомить клиента</span>
+              <span className="block text-[10px] leading-tight text-slate-500">
+                {notify ? 'Клиент получит сообщение о заявке' : 'По умолчанию — без уведомления'}
+              </span>
+            </span>
+            <span
+              className={`relative h-5 w-9 shrink-0 rounded-full transition ${
+                notify ? 'bg-indigo-500' : 'bg-white/[0.12]'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${
+                  notify ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </span>
+          </button>
+
           {error && <p className="text-[11px] text-rose-400">{error}</p>}
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                setCreating(false);
-                setComment('');
-                setError(null);
-              }}
+              onClick={reset}
               disabled={busy}
               className="flex-1 rounded-xl bg-white/[0.05] py-2 text-[13px] font-medium text-slate-300 transition hover:bg-white/[0.08] disabled:opacity-50"
             >

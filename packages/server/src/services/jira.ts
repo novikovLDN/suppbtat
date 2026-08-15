@@ -2,6 +2,8 @@ import { Prisma, JiraStatus, Sender } from '@prisma/client';
 import { prisma } from '../db.js';
 import { bus } from './events.js';
 import { serializeJiraTask } from './serializers.js';
+import { notifyCustomer, addSystemMessage } from './messages.js';
+import { t } from '../bot/texts.js';
 
 const jiraInclude = {
   ticket: { include: { customer: true } },
@@ -37,6 +39,8 @@ export async function createJiraTask(input: {
   comment: string | null;
   createdById: number;
   createdByName: string;
+  // When true, tell the customer (in Telegram) that a Jira task was raised.
+  notifyCustomer?: boolean;
 }) {
   const { title, description } = await buildContext(input.ticketId);
 
@@ -60,6 +64,17 @@ export async function createJiraTask(input: {
   });
 
   bus.publish({ type: 'jira:new', task: serializeJiraTask(task) });
+
+  // Note in the chat who raised it, and optionally notify the customer.
+  await addSystemMessage(
+    input.ticketId,
+    `Создана задача ${task.key} (${input.createdByName})` +
+      (input.notifyCustomer ? ' · клиент уведомлён.' : '.'),
+  ).catch(() => {});
+  if (input.notifyCustomer) {
+    await notifyCustomer(input.ticketId, t.jiraCreatedForCustomer(task.key)).catch(() => {});
+  }
+
   return task;
 }
 

@@ -14,6 +14,7 @@ import { serializeJiraTask } from '../../services/serializers.js';
 const createSchema = z.object({
   ticketId: z.number().int(),
   comment: z.string().max(2000).optional(),
+  notify: z.boolean().optional(),
 });
 
 const statusSchema = z.object({
@@ -42,6 +43,7 @@ export async function jiraRoutes(app: FastifyInstance) {
       comment: parsed.data.comment ?? null,
       createdById: req.operator!.sub,
       createdByName: req.operator!.name,
+      notifyCustomer: parsed.data.notify === true,
     });
     return { task: serializeJiraTask(task) };
   });

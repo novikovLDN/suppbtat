@@ -120,10 +120,10 @@ export const api = {
 
   // Jira board (internal task tracker)
   listJira: () => request<{ tasks: JiraTask[] }>('/api/jira'),
-  createJira: (ticketId: number, comment?: string) =>
+  createJira: (ticketId: number, comment?: string, notify?: boolean) =>
     request<{ task: JiraTask }>('/api/jira', {
       method: 'POST',
-      body: JSON.stringify({ ticketId, ...(comment ? { comment } : {}) }),
+      body: JSON.stringify({ ticketId, ...(comment ? { comment } : {}), ...(notify ? { notify: true } : {}) }),
     }),
   updateJiraStatus: (id: number, status: JiraStatus) =>
     request<{ task: JiraTask }>(`/api/jira/${id}`, {

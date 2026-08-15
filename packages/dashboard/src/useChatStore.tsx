@@ -241,8 +241,8 @@ export function useChatStore(operator: Operator) {
   );
 
   const createJira = useCallback(
-    async (ticketId: number, comment?: string) => {
-      const r = await api.createJira(ticketId, comment);
+    async (ticketId: number, comment?: string, notify?: boolean) => {
+      const r = await api.createJira(ticketId, comment, notify);
       upsertJira(r.task);
       return r.task;
     },
