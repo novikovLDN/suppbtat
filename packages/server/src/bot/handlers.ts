@@ -2,21 +2,19 @@ import { Context, InlineKeyboard } from 'grammy';
 import { bot } from './instance.js';
 import { config } from '../config.js';
 import { t, ticketStatusLabel } from './texts.js';
-import {
-  mainMenuKeyboard,
-  backToMenuKeyboard,
-  ticketCreatedKeyboard,
-  activeTicketKeyboard,
-} from './keyboards.js';
+import { backToMenuKeyboard, ticketCreatedKeyboard, activeTicketKeyboard } from './keyboards.js';
+import { FAQ, faqHomeKeyboard, faqCategoryKeyboard, faqAnswerKeyboard } from './faq.js';
 import { isWithinWorkingHours } from './workhours.js';
 import {
   upsertCustomer,
   findActiveTicket,
   getOrCreateActiveTicket,
+  createTicket,
   listCustomerTickets,
   closeTicket,
 } from '../services/tickets.js';
 import { addCustomerMessage, addSystemMessage, type IncomingMedia } from '../services/messages.js';
+import { pushToAllOperators } from '../services/push.js';
 import { ticketNumber } from '../services/serializers.js';
 import { signToken } from '../api/auth.js';
 import { prisma } from '../db.js';
@@ -30,7 +28,7 @@ const HTML = { parse_mode: 'HTML' as const };
 /* ─── Commands ─────────────────────────────────────────────── */
 
 bot.command('start', async (ctx) => {
-  await ctx.reply(t.welcome, { ...HTML, reply_markup: mainMenuKeyboard() });
+  await ctx.reply(t.welcome, { ...HTML, reply_markup: faqHomeKeyboard() });
 });
 
 bot.command('help', async (ctx) => {
@@ -70,21 +68,63 @@ bot.command('admin', async (ctx) => {
 
 /* ─── Callback buttons ─────────────────────────────────────── */
 
+const sendHome = async (ctx: Context) => {
+  await ctx.reply(t.welcome, { ...HTML, reply_markup: faqHomeKeyboard() });
+};
+
 bot.callbackQuery('back_to_menu', async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply(t.welcome, { ...HTML, reply_markup: mainMenuKeyboard() });
+  await sendHome(ctx);
+});
+
+// FAQ: back to topic list
+bot.callbackQuery('faq:home', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await sendHome(ctx);
+});
+
+// FAQ: open a category → list of questions
+bot.callbackQuery(/^faq:c:(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const ci = Number(ctx.match[1]);
+  const cat = FAQ[ci];
+  if (!cat) return sendHome(ctx);
+  await ctx.reply(`${cat.emoji} <b>${cat.title}</b> — выберите вопрос:`, {
+    ...HTML,
+    reply_markup: faqCategoryKeyboard(ci),
+  });
+});
+
+// FAQ: show an answer
+bot.callbackQuery(/^faq:q:(\d+):(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const ci = Number(ctx.match[1]);
+  const qi = Number(ctx.match[2]);
+  const item = FAQ[ci]?.questions[qi];
+  if (!item) return sendHome(ctx);
+  await ctx.reply(`<b>${escapeHtml(item.q)}</b>\n\n${escapeHtml(item.a)}`, {
+    ...HTML,
+    reply_markup: faqAnswerKeyboard(ci, qi),
+  });
+});
+
+// FAQ: "call operator" (with optional question context) → create a ticket now
+bot.callbackQuery(/^faq:o:(\d+)(?::(\d+))?$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const ci = Number(ctx.match[1]);
+  const qi = ctx.match[2] != null ? Number(ctx.match[2]) : null;
+  const cat = FAQ[ci];
+  const label = cat
+    ? qi != null && cat.questions[qi]
+      ? `${cat.title} → ${cat.questions[qi].q}`
+      : cat.title
+    : 'Обращение';
+  await callOperator(ctx, label);
 });
 
 bot.callbackQuery('help', async (ctx) => {
   await ctx.answerCallbackQuery();
   await ctx.reply(t.help, { ...HTML, reply_markup: backToMenuKeyboard() });
-});
-
-bot.callbackQuery('contact_support', async (ctx) => {
-  await ctx.answerCallbackQuery();
-  // Explicit intent: from now on we accept this user's free-form messages.
-  if (ctx.from) setAwaiting(ctx.from.id);
-  await ctx.reply(t.contactPrompt, { ...HTML, reply_markup: backToMenuKeyboard() });
 });
 
 bot.callbackQuery('my_tickets', async (ctx) => {
@@ -97,12 +137,12 @@ bot.callbackQuery('close_ticket', async (ctx) => {
   const tgId = ctx.from?.id;
   const ticket = tgId ? await findActiveTicket(BigInt(tgId)) : null;
   if (!ticket) {
-    await ctx.reply('У вас нет активного тикета.', { reply_markup: mainMenuKeyboard() });
+    await ctx.reply('У вас нет активного тикета.', { reply_markup: faqHomeKeyboard() });
     return;
   }
   await closeTicket(ticket.id);
   await addSystemMessage(ticket.id, 'Тикет закрыт пользователем.');
-  await ctx.reply(t.ticketClosedByUser(ticket.id), { ...HTML, reply_markup: mainMenuKeyboard() });
+  await ctx.reply(t.ticketClosedByUser(ticket.id), { ...HTML, reply_markup: faqHomeKeyboard() });
 });
 
 /* ─── "My tickets" view ────────────────────────────────────── */
@@ -124,8 +164,36 @@ async function sendMyTickets(ctx: Context) {
     }
   }
 
-  const kb = active ? activeTicketKeyboard() : mainMenuKeyboard();
+  const kb = active ? activeTicketKeyboard() : faqHomeKeyboard();
   await ctx.reply(text, { ...HTML, reply_markup: kb });
+}
+
+/* ─── "Call operator" — creates a ticket immediately ───────── */
+
+async function callOperator(ctx: Context, contextLabel: string) {
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
+  await upsertCustomer(ctx.from);
+  // Accept the user's free-form messages from now on.
+  setAwaiting(userId);
+
+  const active = await findActiveTicket(BigInt(userId));
+  if (active) {
+    await ctx.reply(t.alreadyInSupport, { ...HTML, reply_markup: activeTicketKeyboard() });
+    return;
+  }
+
+  const ticket = await createTicket(BigInt(userId), contextLabel);
+  await addSystemMessage(ticket.id, `Клиент вызвал оператора из раздела «${contextLabel}».`);
+  // Ping operators even before the customer types anything.
+  pushToAllOperators({
+    title: '🆘 Вызов оператора',
+    body: `#${ticketNumber(ticket.id)} · ${contextLabel}`,
+    ticketId: ticket.id,
+  }).catch(() => {});
+
+  await ctx.reply(t.operatorCalled, { ...HTML, reply_markup: ticketCreatedKeyboard() });
+  if (!isWithinWorkingHours()) await ctx.reply(t.restingNotice, HTML);
 }
 
 /* ─── Incoming content (text / photo / document) ───────────── */

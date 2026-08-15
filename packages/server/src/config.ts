@@ -66,6 +66,11 @@ export const config = {
   brand: {
     name: opt('BRAND_NAME', 'Atlas Secure'),
     botUsername: process.env.SUPPORT_BOT_USERNAME || '',
+    // The main product bot referenced in FAQ answers (payments, profile, etc.)
+    mainBotUsername: (() => {
+      const v = opt('MAIN_BOT_USERNAME', '@atlassecure_bot').trim();
+      return v.startsWith('@') ? v : `@${v}`;
+    })(),
   },
 
   workHours: {
