@@ -108,6 +108,12 @@ bot.callbackQuery(/^faq:q:(\d+):(\d+)$/, async (ctx) => {
   });
 });
 
+// FAQ: general "call operator" from the home screen (no topic context)
+bot.callbackQuery('faq:op', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await callOperator(ctx, 'Обращение к оператору');
+});
+
 // FAQ: "call operator" (with optional question context) → create a ticket now
 bot.callbackQuery(/^faq:o:(\d+)(?::(\d+))?$/, async (ctx) => {
   await ctx.answerCallbackQuery();

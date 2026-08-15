@@ -208,9 +208,9 @@ export const FAQ: FaqCategory[] = [
 export function faqHomeKeyboard(): InlineKeyboard {
   const kb = new InlineKeyboard();
   FAQ.forEach((c, i) => {
-    kb.text(`${c.emoji} ${c.title}`, `faq:c:${i}`);
-    if (i < FAQ.length - 1) kb.row();
+    kb.text(`${c.emoji} ${c.title}`, `faq:c:${i}`).row();
   });
+  kb.text('💬 Позвать оператора', 'faq:op');
   return kb;
 }
 
