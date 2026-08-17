@@ -59,20 +59,20 @@ export function Dashboard() {
   return (
     <div className="flex h-full flex-col p-2 text-slate-100 sm:p-3">
       {/* Header */}
-      <header className="panel z-20 mb-2 flex h-16 shrink-0 items-center justify-between rounded-[26px] px-3 sm:mb-3 sm:px-5">
-        <div className="flex items-center gap-2.5">
-          <div className="accent flex h-10 w-10 items-center justify-center rounded-2xl text-white">
+      <header className="panel z-20 mb-2 flex h-16 shrink-0 items-center justify-between gap-2 rounded-[26px] px-2.5 sm:mb-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="accent flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-white sm:h-10 sm:w-10">
             <Shield size={20} strokeWidth={2} />
           </div>
-          <div className="leading-tight">
-            <div className="text-[15px] font-semibold tracking-tight text-white">Atlas&nbsp;Secure</div>
-            <div className="label hidden text-[9px] text-slate-500 sm:block">Панель поддержки</div>
+          <div className="hidden min-w-0 leading-tight sm:block">
+            <div className="truncate text-[15px] font-semibold tracking-tight text-white">Atlas&nbsp;Secure</div>
+            <div className="label text-[9px] text-slate-500">Панель поддержки</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
           <span
-            className={`tile flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium transition ${
+            className={`tile flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-[11px] font-medium transition sm:px-2.5 ${
               store.connected ? 'text-emerald-300' : 'text-rose-300'
             }`}
             title={store.connected ? 'Соединение активно' : 'Переподключение…'}
@@ -89,7 +89,7 @@ export function Dashboard() {
 
           <button
             onClick={() => setJiraOpen(true)}
-            className="tile tile-hover relative flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
+            className="tile tile-hover relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95 sm:h-9 sm:w-9"
             title="Доска Jira"
           >
             <SquareKanban size={17} />
@@ -102,7 +102,7 @@ export function Dashboard() {
 
           <button
             onClick={() => setAnalyticsOpen(true)}
-            className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
+            className="tile tile-hover flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95 sm:h-9 sm:w-9"
             title="Аналитика"
           >
             <BarChart3 size={17} />
@@ -110,7 +110,7 @@ export function Dashboard() {
 
           <button
             onClick={() => setSettingsOpen(true)}
-            className="tile tile-hover flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition active:scale-95"
+            className="tile tile-hover flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95 sm:h-9 sm:w-9"
             title="Настройки и уведомления"
           >
             <Settings size={17} />
@@ -119,7 +119,7 @@ export function Dashboard() {
           {operator!.role === 'ADMIN' && (
             <button
               onClick={() => setAdminOpen(true)}
-              className="tile tile-hover flex items-center gap-1.5 rounded-full px-2.5 py-2 text-xs font-medium text-slate-300 transition active:scale-95"
+              className="tile tile-hover flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-full text-xs font-medium text-slate-300 transition active:scale-95 sm:h-9 sm:w-9 lg:w-auto lg:px-3"
               title="Операторы"
             >
               <Users size={16} />
@@ -127,7 +127,7 @@ export function Dashboard() {
             </button>
           )}
 
-          <div className="tile flex items-center gap-2 rounded-full py-1 pl-1 pr-1 md:pr-3">
+          <div className="tile hidden shrink-0 items-center gap-2 rounded-full py-1 pl-1 pr-1 sm:flex md:pr-3">
             <div className="accent flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white">
               {operator!.displayName.slice(0, 1).toUpperCase()}
             </div>
@@ -138,7 +138,7 @@ export function Dashboard() {
 
           <button
             onClick={logout}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06] hover:text-rose-400"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/[0.06] hover:text-rose-400 sm:h-9 sm:w-9"
             title="Выйти"
           >
             <LogOut size={17} />
