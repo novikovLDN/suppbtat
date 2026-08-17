@@ -91,10 +91,11 @@ export function SettingsModal({
       onClick={onClose}
     >
       <div
-        className="panel animate-slide-up flex w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-w-md sm:rounded-3xl"
+        className="panel animate-slide-up flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-h-[88dvh] sm:max-w-md sm:rounded-3xl"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-5 py-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <Settings size={16} /> Настройки
           </h2>
@@ -106,7 +107,7 @@ export function SettingsModal({
           </button>
         </div>
 
-        <div className="space-y-3 p-5">
+        <div className="space-y-3 overflow-y-auto p-5">
           {/* Appearance / theme */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
