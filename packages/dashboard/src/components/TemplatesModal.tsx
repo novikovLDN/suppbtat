@@ -71,7 +71,7 @@ export function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPic
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <Zap size={16} className="text-indigo-300" /> Шаблоны ответов
           </h2>
           <div className="flex items-center gap-2">

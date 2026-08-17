@@ -14,7 +14,10 @@ import {
   LayoutList,
   UserCheck,
   Archive,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { getTheme, setTheme, type Theme } from '../lib/theme';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
 import { api } from '../api';
@@ -39,7 +42,14 @@ export function Dashboard() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [persona, setPersonaState] = useState(getPersona());
+  const [theme, setThemeState] = useState<Theme>(getTheme());
   const [operators, setOperators] = useState<Operator[]>([]);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    setThemeState(next);
+  };
 
   useEffect(() => {
     api.listOperators().then((r) => setOperators(r.operators)).catch(() => {});
@@ -129,7 +139,7 @@ export function Dashboard() {
             <Shield size={20} strokeWidth={2} />
           </div>
           <div className="hidden min-w-0 leading-tight sm:block">
-            <div className="truncate text-[15px] font-semibold tracking-tight text-white">Atlas&nbsp;Secure</div>
+            <div className="truncate text-[15px] font-semibold tracking-tight text-slate-100">Atlas&nbsp;Secure</div>
             <div className="label text-[9px] text-slate-500">Панель поддержки</div>
           </div>
         </div>
@@ -182,6 +192,14 @@ export function Dashboard() {
             title="Аналитика"
           >
             <BarChart3 size={17} />
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            className="tile tile-hover hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95 sm:flex"
+            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
           <button

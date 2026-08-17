@@ -1,7 +1,52 @@
 @import 'tailwindcss';
 
+/* ════════════════════════════════════════════════════════════
+   THEME TOKENS — light is the default (:root); dark is opt-in
+   via the `.dark` class on <html>. Utilities below read tokens,
+   so both themes share one component layer.
+   ════════════════════════════════════════════════════════════ */
 :root {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --text-body: #1b1f27;
+  --surface: #ffffff;
+  --panel-border: rgba(17, 20, 28, 0.08);
+  --tile-bg: rgba(17, 20, 28, 0.035);
+  --tile-border: rgba(17, 20, 28, 0.09);
+  --tile-hover: rgba(17, 20, 28, 0.06);
+  --accent: #5b5ef0;
+  --accent-hover: #4f52e6;
+  --on-accent: #ffffff;
+  --pill-bg: #16181d;
+  --pill-fg: #ffffff;
+  --pill-badge-bg: rgba(255, 255, 255, 0.16);
+  --pill-badge-fg: rgba(255, 255, 255, 0.85);
+  --scroll: rgba(17, 20, 28, 0.2);
+  --scroll-hover: rgba(17, 20, 28, 0.35);
+  --skeleton: rgba(17, 20, 28, 0.05);
+  --skeleton-shine: rgba(17, 20, 28, 0.07);
+}
+
+.dark {
   color-scheme: dark;
+  --bg: #08090b;
+  --text-body: #f2f3f5;
+  --surface: #0f1012;
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --tile-bg: rgba(255, 255, 255, 0.04);
+  --tile-border: rgba(255, 255, 255, 0.07);
+  --tile-hover: rgba(255, 255, 255, 0.07);
+  --accent: #5b5ef0;
+  --accent-hover: #6d70f2;
+  --on-accent: #ffffff;
+  --pill-bg: #ffffff;
+  --pill-fg: #0f1216;
+  --pill-badge-bg: rgba(15, 18, 22, 0.1);
+  --pill-badge-fg: #334155;
+  --scroll: rgba(148, 163, 184, 0.18);
+  --scroll-hover: rgba(148, 163, 184, 0.35);
+  --skeleton: rgba(255, 255, 255, 0.04);
+  --skeleton-shine: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Viewport / PWA sizing (robust on iOS standalone) ───────── */
@@ -35,51 +80,51 @@ body {
   /* SF Pro on Apple devices (exactly like the reference), Inter elsewhere */
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter',
     system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color: #f2f3f5;
+  color: var(--text-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   letter-spacing: -0.015em;
-  /* flat, restrained near-black — no colour bleed */
-  background-color: #08090b;
+  background-color: var(--bg);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* thin dark scrollbars */
+/* thin themed scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.22) transparent;
+  scrollbar-color: var(--scroll) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.18);
+  background: var(--scroll);
   border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.35);
+  background: var(--scroll-hover);
 }
 
 @layer utilities {
-  /* Primary dark card — flat, thin hairline border, neutral depth only */
+  /* Primary card — flat, thin hairline border, neutral depth only */
   .panel {
-    background: #0f1012;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--surface);
+    border: 1px solid var(--panel-border);
   }
   /* Inset sub-surface (tiles, inputs, chips) */
   .tile {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--tile-bg);
+    border: 1px solid var(--tile-border);
   }
   .tile-hover:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--tile-hover);
   }
   /* Single restrained accent — solid indigo, no glow, no gradient */
   .accent {
-    background-color: #5b5ef0;
+    background-color: var(--accent);
   }
   .accent:hover {
-    background-color: #6d70f2;
+    background-color: var(--accent-hover);
   }
   /* Uppercase spaced section label — a signature of the reference */
   .label {
@@ -212,19 +257,14 @@ body {
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--skeleton);
 }
 .skeleton::after {
   content: '';
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.06),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
   animation: shimmer 1.4s infinite;
 }
 
@@ -246,4 +286,66 @@ select {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   The app was authored dark-first with hardcoded neutral classes.
+   These UNLAYERED rules re-map only the neutral scale (text / inset
+   surfaces / borders) and lift low-contrast status colours for the
+   light theme. Being unlayered, they win over Tailwind's layered
+   utilities automatically. The dark theme keeps the raw values.
+   ════════════════════════════════════════════════════════════ */
+:root:not(.dark) {
+  /* neutral text scale → dark ink on light */
+  .text-slate-100 { color: #0b0d12; }
+  .text-slate-200 { color: #191d26; }
+  .text-slate-300 { color: #333a45; }
+  .text-slate-400 { color: #545b66; }
+  .text-slate-500 { color: #6c7480; }
+  .text-slate-600 { color: #97a0ad; }
+  .hover\:text-slate-100:hover { color: #0b0d12; }
+  .hover\:text-slate-200:hover { color: #191d26; }
+  .hover\:text-slate-300:hover { color: #333a45; }
+  .placeholder\:text-slate-500::placeholder { color: #98a0ac; }
+
+  /* white overlay insets → subtle dark overlays */
+  .bg-white\/\[0\.02\] { background-color: rgba(17, 20, 28, 0.03); }
+  .bg-white\/\[0\.03\] { background-color: rgba(17, 20, 28, 0.04); }
+  .bg-white\/\[0\.04\] { background-color: rgba(17, 20, 28, 0.05); }
+  .bg-white\/\[0\.05\] { background-color: rgba(17, 20, 28, 0.06); }
+  .bg-white\/\[0\.06\] { background-color: rgba(17, 20, 28, 0.06); }
+  .bg-white\/\[0\.07\] { background-color: rgba(17, 20, 28, 0.07); }
+  .bg-white\/\[0\.08\] { background-color: rgba(17, 20, 28, 0.08); }
+  .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(17, 20, 28, 0.05); }
+  .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(17, 20, 28, 0.06); }
+  .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(17, 20, 28, 0.07); }
+  .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(17, 20, 28, 0.09); }
+  .active\:bg-white\/\[0\.06\]:active { background-color: rgba(17, 20, 28, 0.08); }
+  .bg-white\/10 { background-color: rgba(17, 20, 28, 0.08); }
+
+  /* hairline borders / rings / dividers */
+  .border-white\/\[0\.06\] { border-color: rgba(17, 20, 28, 0.09); }
+  .border-white\/\[0\.07\] { border-color: rgba(17, 20, 28, 0.1); }
+  .ring-white\/10 { --tw-ring-color: rgba(17, 20, 28, 0.12); }
+  .ring-white\/5 { --tw-ring-color: rgba(17, 20, 28, 0.08); }
+  .divide-white\/\[0\.06\] > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(17, 20, 28, 0.1) !important;
+  }
+
+  /* lift low-contrast status text for a light background */
+  .text-emerald-300, .text-emerald-400 { color: #059669; }
+  .text-amber-300, .text-amber-400 { color: #b45309; }
+  .text-amber-100 { color: #92400e; }
+  .text-rose-300, .text-rose-400 { color: #e11d48; }
+  .text-indigo-300 { color: #4f46e5; }
+  .text-sky-300 { color: #0284c7; }
+  /* avatar / initials tints */
+  .text-rose-200 { color: #be123c; }
+  .text-sky-200 { color: #0369a1; }
+  .text-indigo-200 { color: #4338ca; }
+  .text-emerald-200 { color: #047857; }
+  .text-amber-200 { color: #b45309; }
+  .text-cyan-200 { color: #0e7490; }
+  .text-violet-200 { color: #6d28d9; }
 }

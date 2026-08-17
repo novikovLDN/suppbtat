@@ -99,7 +99,7 @@ function Body({
         >
           {initials(t.customer)}
         </div>
-        <div className="mt-3 font-semibold text-white">{customerName(t.customer)}</div>
+        <div className="mt-3 font-semibold text-slate-100">{customerName(t.customer)}</div>
         {t.customer.username && (
           <CopyText className="text-xs text-slate-500" value={`@${t.customer.username}`} />
         )}
@@ -127,7 +127,7 @@ function Body({
                     key={p}
                     onClick={() => store.setMeta({ priority: p })}
                     className={`flex flex-1 items-center justify-center gap-1 rounded-full py-1 text-[10px] font-medium transition ${
-                      active ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200'
+                      active ? 'bg-white/10 text-slate-100' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} />

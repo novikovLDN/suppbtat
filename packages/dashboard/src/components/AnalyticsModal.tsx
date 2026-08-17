@@ -52,7 +52,7 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <LineChart size={16} /> Обзор
             <span className="label ml-1 text-[9px] text-slate-500">Реальное время</span>
           </h2>
@@ -198,7 +198,7 @@ function Stat({
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3">
       <div className={`mb-1.5 flex items-center gap-1 text-[10px] ${TONE[tone]}`}>{icon}</div>
-      <div className="text-2xl font-semibold leading-none tracking-tight tabular-nums text-white">{value}</div>
+      <div className="text-2xl font-semibold leading-none tracking-tight tabular-nums text-slate-100">{value}</div>
       <div className="label mt-1.5 text-[9px] text-slate-500">{label}</div>
     </div>
   );
@@ -224,7 +224,7 @@ function SpeedCard({
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3">
       <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-slate-500">{icon}<span className="label">{label}</span></div>
-      <div className={`flex items-center gap-2 text-xl font-semibold tracking-tight ${minutes == null ? 'text-slate-500' : 'text-white'}`}>
+      <div className={`flex items-center gap-2 text-xl font-semibold tracking-tight ${minutes == null ? 'text-slate-500' : 'text-slate-100'}`}>
         <span className={`h-2 w-2 rounded-full ${dot}`} />
         {minutesLabel(minutes)}
       </div>
@@ -284,7 +284,7 @@ function MiniStat({
   return (
     <div className="rounded-xl bg-white/[0.03] p-2.5">
       <div className="flex items-baseline gap-1.5">
-        <span className="text-lg font-semibold tabular-nums text-white">{value}</span>
+        <span className="text-lg font-semibold tabular-nums text-slate-100">{value}</span>
         {delta != null && <DeltaChip delta={delta} invert={invert} />}
       </div>
       <div className="label mt-1 text-[9px] text-slate-500">{label}</div>

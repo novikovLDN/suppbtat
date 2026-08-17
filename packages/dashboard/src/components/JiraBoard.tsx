@@ -81,7 +81,7 @@ export function JiraBoard({ store, onClose, onOpenChat }: Props) {
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <SquareKanban size={16} /> Доска Jira
             <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-slate-400">
               {tasks.length}
@@ -130,7 +130,7 @@ export function JiraBoard({ store, onClose, onOpenChat }: Props) {
                 key={s}
                 onClick={() => setMobileStatus(s)}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-medium transition ${
-                  active ? 'bg-white/[0.08] text-white' : 'text-slate-400'
+                  active ? 'bg-white/[0.08] text-slate-100' : 'text-slate-400'
                 }`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} />
@@ -285,7 +285,7 @@ function Card({
               key={s}
               onClick={() => !active && onMove(task.id, s)}
               className={`flex flex-1 items-center justify-center gap-1 rounded-full py-1 text-[10px] font-medium transition ${
-                active ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
+                active ? 'bg-white/10 text-slate-100' : 'text-slate-500 hover:text-slate-300'
               }`}
               title={m.label}
             >
@@ -339,7 +339,7 @@ function JiraDetail({
           <button onClick={onClose} className="flex items-center gap-1 text-[13px] text-slate-400 transition hover:text-slate-200 sm:hidden">
             <ChevronLeft size={16} /> Назад
           </button>
-          <h3 className="hidden items-center gap-2 text-sm font-semibold text-white sm:flex">
+          <h3 className="hidden items-center gap-2 text-sm font-semibold text-slate-100 sm:flex">
             <span className="font-mono text-indigo-300">{task.key}</span>
           </h3>
           <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${m.chip}`}>
@@ -358,7 +358,7 @@ function JiraDetail({
               {initials(task.customer)}
             </div>
             <div className="min-w-0">
-              <div className="truncate font-semibold text-white">{customerName(task.customer)}</div>
+              <div className="truncate font-semibold text-slate-100">{customerName(task.customer)}</div>
               <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
                 <span className="font-mono text-indigo-300 sm:hidden">{task.key}</span>
                 <span className="font-mono">#{task.ticketNumber}</span>
@@ -421,7 +421,7 @@ function JiraDetail({
                     key={s}
                     onClick={() => !active && onMove(task.id, s)}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-[11px] font-medium transition ${
-                      active ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200'
+                      active ? 'bg-white/10 text-slate-100' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />

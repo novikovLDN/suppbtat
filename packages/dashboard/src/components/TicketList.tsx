@@ -84,14 +84,14 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
                 key={s.key}
                 onClick={() => store.setScope(s.key)}
                 className={`flex flex-1 items-center justify-center gap-1 rounded-full px-1.5 py-1.5 text-[11px] font-semibold transition ${
-                  active ? 'bg-white text-slate-900' : 'text-slate-400 hover:text-slate-100'
+                  active ? 'bg-[var(--pill-bg)] text-[var(--pill-fg)]' : 'text-slate-400 hover:text-slate-100'
                 }`}
               >
                 {s.label}
                 {count !== undefined && count > 0 && (
                   <span
                     className={`rounded-full px-1.5 text-[10px] ${
-                      active ? 'bg-slate-900/10 text-slate-700' : 'bg-white/10 text-slate-300'
+                      active ? 'bg-[var(--pill-badge-bg)] text-[var(--pill-badge-fg)]' : 'bg-white/10 text-slate-300'
                     }`}
                   >
                     {count}
@@ -173,7 +173,7 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-1.5">
                     {pr.show && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pr.dot}`} title={pr.label} />}
-                    <span className="truncate text-sm font-semibold text-white">
+                    <span className="truncate text-sm font-semibold text-slate-100">
                       {customerName(t.customer)}
                     </span>
                   </span>
@@ -249,7 +249,7 @@ function Kpi({
     <div className="flex flex-col items-center justify-center gap-1 px-1 py-2.5">
       <span
         className={`text-[19px] font-semibold leading-none tracking-tight tabular-nums ${
-          value > 0 ? 'text-white' : 'text-slate-600'
+          value > 0 ? 'text-slate-100' : 'text-slate-600'
         }`}
       >
         {value}

@@ -88,7 +88,7 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-white">
+            <span className="truncate text-sm font-semibold text-slate-100">
               {customerName(selected.customer)}
             </span>
             <span

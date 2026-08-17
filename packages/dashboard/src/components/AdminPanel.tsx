@@ -60,7 +60,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <Users size={16} /> Управление операторами
           </h2>
           <button

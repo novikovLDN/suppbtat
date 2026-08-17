@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { X, Settings, Bell, Drama, Smartphone, Check, Share, Volume2, AlertTriangle } from 'lucide-react';
+import { X, Settings, Bell, Drama, Smartphone, Check, Share, Volume2, AlertTriangle, Sun, Moon } from 'lucide-react';
 import { api } from '../api';
 import { OPERATOR_PERSONAS } from '../lib/personas';
 import { isSoundOn, setSoundOn, playChime } from '../lib/sound';
+import { getTheme, setTheme, type Theme } from '../lib/theme';
 import {
   disablePush,
   enablePush,
@@ -30,7 +31,13 @@ export function SettingsModal({
   const [testMsg, setTestMsg] = useState('');
   const [testing, setTesting] = useState(false);
   const [sound, setSound] = useState(isSoundOn());
+  const [theme, setThemeState] = useState<Theme>(getTheme());
   const [openCount, setOpenCount] = useState<number | null>(null);
+
+  const chooseTheme = (t: Theme) => {
+    setTheme(t);
+    setThemeState(t);
+  };
 
   const blocked = pushBlockedReason();
   const needsInstall = isIOS() && !isStandalone();
@@ -88,7 +95,7 @@ export function SettingsModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <Settings size={16} /> Настройки
           </h2>
           <button
@@ -100,6 +107,35 @@ export function SettingsModal({
         </div>
 
         <div className="space-y-3 p-5">
+          {/* Appearance / theme */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+              <Sun size={16} className="text-slate-400" /> Оформление
+            </div>
+            <p className="mt-1 text-xs text-slate-400">Светлая или тёмная тема панели.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {([
+                { key: 'light' as Theme, label: 'Светлая', icon: <Sun size={15} /> },
+                { key: 'dark' as Theme, label: 'Тёмная', icon: <Moon size={15} /> },
+              ]).map((o) => {
+                const active = theme === o.key;
+                return (
+                  <button
+                    key={o.key}
+                    onClick={() => chooseTheme(o.key)}
+                    className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition ${
+                      active
+                        ? 'accent text-white'
+                        : 'tile tile-hover text-slate-300'
+                    }`}
+                  >
+                    {o.icon} {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Operator persona */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">

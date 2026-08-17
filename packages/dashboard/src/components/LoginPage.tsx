@@ -32,7 +32,7 @@ export function LoginPage() {
           <div className="accent mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] text-white">
             <Shield size={30} strokeWidth={2} />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Atlas Secure</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Atlas Secure</h1>
           <p className="label mt-1.5 text-[10px] text-slate-500">Панель поддержки</p>
         </div>
 
