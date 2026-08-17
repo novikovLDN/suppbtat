@@ -15,7 +15,7 @@ import {
 import type { ChatStore } from '../useChatStore';
 import type { Message, Template, Ticket } from '../types';
 import { api, mediaUrl } from '../api';
-import { avatarColor, customerName, initials, statusBadge, timeShort } from '../lib/format';
+import { avatarColor, customerName, initials, statusBadge, telegramHtmlToSafe, timeShort } from '../lib/format';
 import { TemplatesModal } from './TemplatesModal';
 import { Lightbox } from './Lightbox';
 
@@ -162,7 +162,7 @@ function MessageBubble({
           <div className="mb-0.5 flex items-center gap-1 text-[10px] font-medium text-amber-300/90">
             <StickyNote size={11} /> Заметка{m.operatorName ? ` · ${m.operatorName}` : ''}
           </div>
-          {m.text && <div className="whitespace-pre-wrap break-words">{m.text}</div>}
+          {m.text && <FormattedText text={m.text} />}
           <div className="mt-0.5 text-right text-[10px] text-amber-300/60">{timeShort(m.createdAt)}</div>
         </div>
       </div>
@@ -205,12 +205,22 @@ function MessageBubble({
             {m.fileName || mediaLabel(m.mediaType)}
           </a>
         )}
-        {m.text && <div className="whitespace-pre-wrap break-words">{m.text}</div>}
+        {m.text && <FormattedText text={m.text} />}
         <div className={`mt-0.5 text-right text-[10px] ${fromOperator ? 'text-white/60' : 'text-slate-500'}`}>
           {timeShort(m.createdAt)}
         </div>
       </div>
     </div>
+  );
+}
+
+/** Renders a message with the same safe subset of Telegram HTML the bot sends. */
+function FormattedText({ text }: { text: string }) {
+  return (
+    <div
+      className="whitespace-pre-wrap break-words [&_a]:underline [&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-white/25 [&_blockquote]:pl-2 [&_blockquote]:opacity-90 [&_code]:rounded [&_code]:bg-black/25 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_pre]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-black/25 [&_pre]:p-2 [&_pre]:text-[0.85em]"
+      dangerouslySetInnerHTML={{ __html: telegramHtmlToSafe(text) }}
+    />
   );
 }
 

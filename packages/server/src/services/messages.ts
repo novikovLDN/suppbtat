@@ -1,4 +1,4 @@
-import { InputFile } from 'grammy';
+import { InputFile, GrammyError } from 'grammy';
 import { Sender } from '@prisma/client';
 import { prisma } from '../db.js';
 import { bot } from '../bot/instance.js';
@@ -6,6 +6,20 @@ import { bus } from './events.js';
 import { serializeMessage, serializeTicket } from './serializers.js';
 import { getTicketById } from './tickets.js';
 import { logger } from '../lib/logger.js';
+
+/**
+ * Telegram rejects a message when parse_mode is HTML but the markup is invalid
+ * (a stray "<", an unsupported tag, an unclosed tag, …). We detect that so we
+ * can transparently retry the send as plain text — the message is delivered
+ * either way, and valid formatting still renders.
+ */
+function isHtmlEntityError(err: unknown): boolean {
+  if (!(err instanceof GrammyError)) return false;
+  if (err.error_code !== 400) return false;
+  return /parse entities|unsupported start tag|can't find end tag|unclosed|tag .* is not|entity/i.test(
+    err.description || '',
+  );
+}
 
 export interface IncomingMedia {
   type: 'photo' | 'document' | 'video' | 'voice';
@@ -105,9 +119,17 @@ export async function addOperatorMessage(
 
   try {
     if (data.photo) {
-      const sent = await bot.api.sendPhoto(chatId, new InputFile(data.photo.buffer, data.photo.filename), {
-        caption,
-      });
+      const send = (mode: 'HTML' | undefined) =>
+        bot.api.sendPhoto(chatId, new InputFile(data.photo!.buffer, data.photo!.filename), {
+          ...(caption ? { caption, ...(mode ? { parse_mode: mode } : {}) } : {}),
+        });
+      let sent;
+      try {
+        sent = await send('HTML');
+      } catch (err) {
+        if (caption && isHtmlEntityError(err)) sent = await send(undefined);
+        else throw err;
+      }
       telegramMessageId = sent.message_id;
       mediaType = 'photo';
       // store the largest size's file_id so the dashboard can render it back
@@ -115,15 +137,29 @@ export async function addOperatorMessage(
       mediaFileId = sizes.length ? sizes[sizes.length - 1].file_id : null;
       fileName = data.photo.filename;
     } else if (data.document) {
-      const sent = await bot.api.sendDocument(chatId, new InputFile(data.document.buffer, data.document.filename), {
-        caption,
-      });
+      const send = (mode: 'HTML' | undefined) =>
+        bot.api.sendDocument(chatId, new InputFile(data.document!.buffer, data.document!.filename), {
+          ...(caption ? { caption, ...(mode ? { parse_mode: mode } : {}) } : {}),
+        });
+      let sent;
+      try {
+        sent = await send('HTML');
+      } catch (err) {
+        if (caption && isHtmlEntityError(err)) sent = await send(undefined);
+        else throw err;
+      }
       telegramMessageId = sent.message_id;
       mediaType = 'document';
       mediaFileId = sent.document?.file_id ?? null;
       fileName = sent.document?.file_name ?? data.document.filename;
     } else if (caption) {
-      const sent = await bot.api.sendMessage(chatId, caption);
+      let sent;
+      try {
+        sent = await bot.api.sendMessage(chatId, caption, { parse_mode: 'HTML' });
+      } catch (err) {
+        if (isHtmlEntityError(err)) sent = await bot.api.sendMessage(chatId, caption);
+        else throw err;
+      }
       telegramMessageId = sent.message_id;
     } else {
       throw new Error('Empty message');

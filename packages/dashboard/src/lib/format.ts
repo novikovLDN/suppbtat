@@ -123,6 +123,44 @@ export function priorityMeta(p: Priority): PriorityMeta {
 
 export const PRIORITIES: Priority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
 
+// Telegram-supported inline formatting tags we render safely in the dashboard.
+const TG_TAGS = [
+  'b',
+  'strong',
+  'i',
+  'em',
+  'u',
+  'ins',
+  's',
+  'strike',
+  'del',
+  'code',
+  'pre',
+  'blockquote',
+];
+
+/**
+ * Render the same subset of Telegram HTML the bot sends to customers, safely.
+ * Everything is HTML-escaped first, then only the whitelisted formatting tags
+ * (and http(s) links) are restored — so arbitrary input can never inject markup.
+ */
+export function telegramHtmlToSafe(raw: string): string {
+  let s = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const alt = TG_TAGS.join('|');
+  s = s.replace(new RegExp(`&lt;(/?(?:${alt}))&gt;`, 'gi'), '<$1>');
+
+  // <a href="https://…">…</a>
+  s = s
+    .replace(
+      /&lt;a href="(https?:\/\/[^"]+?)"&gt;/gi,
+      '<a href="$1" target="_blank" rel="noreferrer noopener">',
+    )
+    .replace(/&lt;\/a&gt;/gi, '</a>');
+
+  return s;
+}
+
 export interface JiraStatusMeta {
   key: JiraStatus;
   label: string;
