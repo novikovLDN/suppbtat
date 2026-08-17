@@ -78,7 +78,7 @@ export interface Stats {
   today: { created: number; closed: number };
   avgFirstResponseMin: number | null;
   avgResolutionMin: number | null;
-  perDay: { date: string; count: number }[];
+  perDay: { date: string; created: number; closed: number }[];
   operators: { id: number; name: string; active: number; replies7d: number }[];
 }
 

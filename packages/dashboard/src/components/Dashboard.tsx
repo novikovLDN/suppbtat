@@ -1,5 +1,20 @@
-import { useEffect, useState } from 'react';
-import { Shield, Settings, Users, LogOut, BarChart3, SquareKanban } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Shield,
+  Settings,
+  Users,
+  LogOut,
+  BarChart3,
+  SquareKanban,
+  Search,
+  PlusCircle,
+  Inbox,
+  Clock,
+  ArrowDownUp,
+  LayoutList,
+  UserCheck,
+  Archive,
+} from 'lucide-react';
 import { useAuth } from '../store';
 import { useChatStore } from '../useChatStore';
 import { api } from '../api';
@@ -12,6 +27,7 @@ import { AdminPanel } from './AdminPanel';
 import { SettingsModal } from './SettingsModal';
 import { AnalyticsModal } from './AnalyticsModal';
 import { JiraBoard } from './JiraBoard';
+import { CommandPalette, type Command } from './CommandPalette';
 
 export function Dashboard() {
   const { operator, logout } = useAuth();
@@ -20,6 +36,7 @@ export function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [jiraOpen, setJiraOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [persona, setPersonaState] = useState(getPersona());
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -56,6 +73,53 @@ export function Dashboard() {
     return () => navigator.serviceWorker?.removeEventListener('message', onMessage);
   }, [selectTicket]);
 
+  // ⌘K / Ctrl+K opens the command palette.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const isAdmin = operator!.role === 'ADMIN';
+  const { setScope, setSort, claimNext } = store;
+
+  const commands = useMemo<Command[]>(() => {
+    const list: Command[] = [
+      {
+        id: 'claim-next',
+        label: 'Взять следующий тикет',
+        hint: 'Самый давний неотвеченный',
+        icon: <PlusCircle size={15} />,
+        keywords: 'claim next очередь взять',
+        run: () => claimNext(getPersona() || undefined).catch(() => {}),
+      },
+      { id: 'jira', label: 'Открыть доску Jira', icon: <SquareKanban size={15} />, keywords: 'задачи board', run: () => setJiraOpen(true) },
+      { id: 'analytics', label: 'Открыть обзор и метрики', icon: <BarChart3 size={15} />, keywords: 'аналитика stats метрики', run: () => setAnalyticsOpen(true) },
+      { id: 'settings', label: 'Настройки', icon: <Settings size={15} />, keywords: 'settings уведомления звук', run: () => setSettingsOpen(true) },
+      { id: 'scope-all', label: 'Все тикеты', icon: <LayoutList size={15} />, keywords: 'вкладка все open', run: () => setScope('all') },
+      { id: 'scope-unassigned', label: 'Новые (не взятые)', icon: <Inbox size={15} />, keywords: 'вкладка новые unassigned', run: () => setScope('unassigned') },
+      { id: 'scope-mine', label: 'Мои тикеты', icon: <UserCheck size={15} />, keywords: 'вкладка мои mine', run: () => setScope('mine') },
+      { id: 'scope-closed', label: 'Закрытые', icon: <Archive size={15} />, keywords: 'вкладка закрытые closed', run: () => setScope('closed') },
+      { id: 'sort-waiting', label: 'Сортировать: дольше ждут', icon: <Clock size={15} />, keywords: 'сортировка sla', run: () => setSort('waiting') },
+      { id: 'sort-recent', label: 'Сортировать: недавние', icon: <ArrowDownUp size={15} />, keywords: 'сортировка recent', run: () => setSort('recent') },
+    ];
+    if (isAdmin) {
+      list.splice(4, 0, {
+        id: 'operators',
+        label: 'Управление операторами',
+        icon: <Users size={15} />,
+        keywords: 'операторы команда team',
+        run: () => setAdminOpen(true),
+      });
+    }
+    return list;
+  }, [claimNext, setScope, setSort, isAdmin]);
+
   return (
     <div className="flex h-full flex-col p-2 text-slate-100 sm:p-3">
       {/* Header */}
@@ -71,6 +135,18 @@ export function Dashboard() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="tile tile-hover flex h-8 shrink-0 items-center gap-2 rounded-full px-2 text-slate-400 transition active:scale-95 sm:h-9 sm:px-2.5"
+            title="Поиск и команды (⌘K)"
+          >
+            <Search size={16} />
+            <span className="hidden text-[11px] font-medium lg:inline">Команды</span>
+            <kbd className="hidden rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 lg:inline">
+              ⌘K
+            </kbd>
+          </button>
+
           <span
             className={`tile flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-[11px] font-medium transition sm:px-2.5 ${
               store.connected ? 'text-emerald-300' : 'text-rose-300'
@@ -198,6 +274,14 @@ export function Dashboard() {
         />
       )}
       {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
+      {paletteOpen && (
+        <CommandPalette
+          store={store}
+          commands={commands}
+          onSelectTicket={(id) => selectTicket(id).catch(() => {})}
+          onClose={() => setPaletteOpen(false)}
+        />
+      )}
     </div>
   );
 }

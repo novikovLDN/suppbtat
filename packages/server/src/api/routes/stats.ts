@@ -37,12 +37,14 @@ export async function statsRoutes(app: FastifyInstance) {
       WHERE tk.status = 'CLOSED' AND tk."closedAt" >= now() - interval '7 days'
     `)) as Array<{ m: number | null }>;
 
+    // Created vs resolved per day over the last 14 days (dense series incl. zeros).
     const perDay = (await prisma.$queryRawUnsafe(`
-      SELECT to_char(date_trunc('day', "createdAt"), 'YYYY-MM-DD') AS d, count(*)::int AS c
-      FROM "Ticket"
-      WHERE "createdAt" >= now() - interval '6 days'
-      GROUP BY 1 ORDER BY 1
-    `)) as Array<{ d: string; c: number }>;
+      SELECT to_char(d, 'YYYY-MM-DD') AS date,
+        (SELECT count(*)::int FROM "Ticket" t WHERE date_trunc('day', t."createdAt") = d) AS created,
+        (SELECT count(*)::int FROM "Ticket" t WHERE t.status = 'CLOSED' AND date_trunc('day', t."closedAt") = d) AS closed
+      FROM generate_series(date_trunc('day', now()) - interval '13 days', date_trunc('day', now()), interval '1 day') d
+      ORDER BY d
+    `)) as Array<{ date: string; created: number; closed: number }>;
 
     const operators = (await prisma.$queryRawUnsafe(`
       SELECT o.id, o."displayName" AS name,
@@ -64,7 +66,11 @@ export async function statsRoutes(app: FastifyInstance) {
       today: { created: createdToday, closed: closedToday },
       avgFirstResponseMin: num(avgFirst[0]?.m),
       avgResolutionMin: num(avgRes[0]?.m),
-      perDay: perDay.map((r) => ({ date: r.d, count: Number(r.c) })),
+      perDay: perDay.map((r) => ({
+        date: r.date,
+        created: Number(r.created),
+        closed: Number(r.closed),
+      })),
       operators: operators.map((o) => ({
         id: o.id,
         name: o.name,
