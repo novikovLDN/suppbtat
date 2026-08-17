@@ -58,12 +58,29 @@ export async function buildServer() {
 
   // Serve the built dashboard (single-service deploy) with SPA fallback.
   if (fs.existsSync(dashboardDist)) {
-    await app.register(fastifyStatic, { root: dashboardDist, prefix: '/' });
+    await app.register(fastifyStatic, {
+      root: dashboardDist,
+      prefix: '/',
+      // Take full control of caching (the plugin's default is public,max-age=0).
+      // Fingerprinted assets are immutable; the entry HTML / SW / manifest must
+      // always revalidate so a new deploy reaches installed (iOS) PWAs at once.
+      cacheControl: false,
+      setHeaders: (res, pathName) => {
+        if (/[\\/]assets[\\/]/.test(pathName)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else if (/(index\.html|sw\.js|manifest\.webmanifest)$/.test(pathName)) {
+          res.setHeader('Cache-Control', 'no-cache');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+        }
+      },
+    });
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api') || req.url.startsWith('/ws')) {
         return reply.code(404).send({ error: 'Not found' });
       }
-      return reply.sendFile('index.html');
+      // Never let the shell HTML be cached — it points at the current asset hashes.
+      return reply.header('Cache-Control', 'no-cache').sendFile('index.html');
     });
     logger.info(`Serving dashboard from ${dashboardDist}`);
   } else {
