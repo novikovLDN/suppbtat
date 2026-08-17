@@ -15,9 +15,13 @@ import {
   ExternalLink,
   Bell,
   BellOff,
+  FileText,
+  Film,
+  Music,
+  Download,
 } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
-import type { Operator, Priority, Ticket } from '../types';
+import type { Message, Operator, Priority, Ticket } from '../types';
 import { mediaUrl } from '../api';
 import {
   avatarColor,
@@ -25,11 +29,12 @@ import {
   dateTime,
   initials,
   jiraStatusMeta,
+  mediaKind,
   priorityMeta,
   PRIORITIES,
   statusBadge,
 } from '../lib/format';
-import { Lightbox } from './Lightbox';
+import { Lightbox, type ViewerKind } from './Lightbox';
 
 interface Props {
   store: ChatStore;
@@ -86,8 +91,10 @@ function Body({
   const badge = statusBadge(t);
   const open = t.status === 'OPEN';
   const assigned = t.assignedOperatorId !== null;
-  const photos = store.messages.filter((m) => m.mediaType === 'photo' && m.mediaFileId);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const attachments = store.messages.filter((m) => m.mediaFileId);
+  const photos = attachments.filter((m) => mediaKind(m.mediaType, m.fileName) === 'image');
+  const files = attachments.filter((m) => mediaKind(m.mediaType, m.fileName) !== 'image');
+  const [viewer, setViewer] = useState<{ url: string; kind: ViewerKind; name?: string } | null>(null);
 
   return (
     <>
@@ -222,16 +229,32 @@ function Body({
       {/* Attachments gallery */}
       {photos.length > 0 && (
         <div className="border-t border-white/[0.06] p-4">
-          <div className="label mb-2 text-[10px] text-slate-500">Вложения ({photos.length})</div>
+          <div className="label mb-2 text-[10px] text-slate-500">Фото ({photos.length})</div>
           <div className="grid grid-cols-3 gap-1.5">
             {photos.map((m) => (
               <button
                 key={m.id}
-                onClick={() => setLightbox(mediaUrl(m.mediaFileId!))}
+                onClick={() => setViewer({ url: mediaUrl(m.mediaFileId!), kind: 'image' })}
                 className="aspect-square overflow-hidden rounded-lg ring-1 ring-white/10"
               >
                 <img src={mediaUrl(m.mediaFileId!)} alt="" className="h-full w-full object-cover" loading="lazy" />
               </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Files (pdf / video / audio / docs) */}
+      {files.length > 0 && (
+        <div className="border-t border-white/[0.06] p-4">
+          <div className="label mb-2 text-[10px] text-slate-500">Файлы ({files.length})</div>
+          <div className="space-y-1.5">
+            {files.map((m) => (
+              <FileRow
+                key={m.id}
+                m={m}
+                onOpenPdf={(url, name) => setViewer({ url, kind: 'pdf', name })}
+              />
             ))}
           </div>
         </div>
@@ -249,8 +272,58 @@ function Body({
         </div>
       )}
 
-      {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
+      {viewer && (
+        <Lightbox url={viewer.url} kind={viewer.kind} name={viewer.name} onClose={() => setViewer(null)} />
+      )}
     </>
+  );
+}
+
+function FileRow({ m, onOpenPdf }: { m: Message; onOpenPdf: (url: string, name?: string) => void }) {
+  const name = m.fileName || undefined;
+  const url = mediaUrl(m.mediaFileId!, name);
+  const kind = mediaKind(m.mediaType, m.fileName);
+  const meta =
+    kind === 'pdf'
+      ? { icon: <FileText size={15} />, tint: 'bg-rose-500/15 text-rose-300', label: 'PDF' }
+      : kind === 'video'
+        ? { icon: <Film size={15} />, tint: 'bg-sky-500/15 text-sky-300', label: 'Видео' }
+        : kind === 'audio'
+          ? { icon: <Music size={15} />, tint: 'bg-violet-500/15 text-violet-300', label: 'Аудио' }
+          : { icon: <FileText size={15} />, tint: 'bg-white/[0.06] text-slate-300', label: 'Файл' };
+
+  const content = (
+    <>
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.tint}`}>
+        {meta.icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-medium text-slate-200">{name || meta.label}</span>
+        <span className="label block text-[9px] text-slate-500">{meta.label}</span>
+      </span>
+    </>
+  );
+
+  if (kind === 'pdf') {
+    return (
+      <button
+        onClick={() => onOpenPdf(url, name)}
+        className="tile tile-hover flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition"
+      >
+        {content}
+      </button>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="tile tile-hover flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition"
+    >
+      {content}
+      <Download size={14} className="shrink-0 text-slate-500" />
+    </a>
   );
 }
 

@@ -15,9 +15,15 @@ import {
 import type { ChatStore } from '../useChatStore';
 import type { Message, Template, Ticket } from '../types';
 import { api, mediaUrl } from '../api';
-import { avatarColor, customerName, initials, statusBadge, telegramHtmlToSafe, timeShort } from '../lib/format';
+import { avatarColor, customerName, initials, mediaKind, statusBadge, telegramHtmlToSafe, timeShort } from '../lib/format';
 import { TemplatesModal } from './TemplatesModal';
-import { Lightbox } from './Lightbox';
+import { Lightbox, type ViewerKind } from './Lightbox';
+
+interface ViewerState {
+  url: string;
+  kind: ViewerKind;
+  name?: string;
+}
 
 interface Props {
   store: ChatStore;
@@ -41,7 +47,7 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
   const { selected, messages } = store;
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevIdRef = useRef<number | undefined>(undefined);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<ViewerState | null>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -124,13 +130,15 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
 
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-4 sm:px-5">
         {messages.map((m) => (
-          <MessageBubble key={m.id} m={m} mine={m.operatorId === operatorId} onOpenImage={setLightbox} />
+          <MessageBubble key={m.id} m={m} mine={m.operatorId === operatorId} onOpenMedia={setViewer} />
         ))}
       </div>
 
       <Composer store={store} disabled={closed} />
 
-      {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
+      {viewer && (
+        <Lightbox url={viewer.url} kind={viewer.kind} name={viewer.name} onClose={() => setViewer(null)} />
+      )}
     </main>
   );
 }
@@ -138,11 +146,11 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
 function MessageBubble({
   m,
   mine,
-  onOpenImage,
+  onOpenMedia,
 }: {
   m: Message;
   mine: boolean;
-  onOpenImage: (url: string) => void;
+  onOpenMedia: (v: ViewerState) => void;
 }) {
   if (m.sender === 'SYSTEM') {
     return (
@@ -182,29 +190,7 @@ function MessageBubble({
         {fromOperator && m.operatorName && (
           <div className="mb-0.5 text-[10px] font-medium text-white/70">{mine ? 'Вы' : m.operatorName}</div>
         )}
-        {m.mediaType === 'photo' && m.mediaFileId && (
-          <button onClick={() => onOpenImage(mediaUrl(m.mediaFileId!))} className="block">
-            <img
-              src={mediaUrl(m.mediaFileId)}
-              alt="вложение"
-              className="mb-1 max-h-64 cursor-zoom-in rounded-xl object-cover"
-              loading="lazy"
-            />
-          </button>
-        )}
-        {m.mediaType && m.mediaType !== 'photo' && m.mediaFileId && (
-          <a
-            href={mediaUrl(m.mediaFileId)}
-            target="_blank"
-            rel="noreferrer"
-            className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
-              fromOperator ? 'bg-black/20' : 'bg-white/10'
-            }`}
-          >
-            <FileText size={14} />
-            {m.fileName || mediaLabel(m.mediaType)}
-          </a>
-        )}
+        {m.mediaFileId && <Attachment m={m} fromOperator={fromOperator} onOpenMedia={onOpenMedia} />}
         {m.text && <FormattedText text={m.text} />}
         <div className={`mt-0.5 text-right text-[10px] ${fromOperator ? 'text-white/60' : 'text-slate-500'}`}>
           {timeShort(m.createdAt)}
@@ -221,6 +207,82 @@ function FormattedText({ text }: { text: string }) {
       className="whitespace-pre-wrap break-words [&_a]:underline [&_blockquote]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-white/25 [&_blockquote]:pl-2 [&_blockquote]:opacity-90 [&_code]:rounded [&_code]:bg-black/25 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_pre]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-black/25 [&_pre]:p-2 [&_pre]:text-[0.85em]"
       dangerouslySetInnerHTML={{ __html: telegramHtmlToSafe(text) }}
     />
+  );
+}
+
+function Attachment({
+  m,
+  fromOperator,
+  onOpenMedia,
+}: {
+  m: Message;
+  fromOperator: boolean;
+  onOpenMedia: (v: ViewerState) => void;
+}) {
+  const id = m.mediaFileId!;
+  const name = m.fileName || undefined;
+  const url = mediaUrl(id, name);
+  const kind = mediaKind(m.mediaType, m.fileName);
+
+  if (kind === 'image') {
+    return (
+      <button onClick={() => onOpenMedia({ url, kind: 'image', name })} className="block">
+        <img
+          src={url}
+          alt="вложение"
+          className="mb-1 max-h-64 cursor-zoom-in rounded-xl object-cover"
+          loading="lazy"
+        />
+      </button>
+    );
+  }
+
+  if (kind === 'video') {
+    return (
+      <video
+        src={url}
+        controls
+        preload="metadata"
+        className="mb-1 max-h-72 w-full max-w-[320px] rounded-xl bg-black/40"
+      />
+    );
+  }
+
+  if (kind === 'audio') {
+    return <audio src={url} controls preload="metadata" className="mb-1 w-full min-w-[220px]" />;
+  }
+
+  if (kind === 'pdf') {
+    return (
+      <button
+        onClick={() => onOpenMedia({ url, kind: 'pdf', name })}
+        className={`mb-1 flex w-full max-w-[320px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
+          fromOperator ? 'bg-black/20 hover:bg-black/30' : 'bg-white/10 hover:bg-white/[0.14]'
+        }`}
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/15 text-rose-300">
+          <FileText size={16} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium">{name || 'Документ.pdf'}</span>
+          <span className="block text-[10px] opacity-60">PDF · нажмите, чтобы открыть</span>
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
+        fromOperator ? 'bg-black/20' : 'bg-white/10'
+      }`}
+    >
+      <FileText size={14} />
+      {name || mediaLabel(m.mediaType || 'document')}
+    </a>
   );
 }
 
@@ -379,7 +441,7 @@ function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) 
             <input
               ref={fileRef}
               type="file"
-              accept="image/*,.pdf,.txt,.log,.zip"
+              accept="image/*,video/*,audio/*,.pdf,.txt,.log,.zip,.doc,.docx"
               className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />

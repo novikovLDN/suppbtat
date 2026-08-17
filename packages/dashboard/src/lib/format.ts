@@ -202,3 +202,21 @@ export function jiraStatusMeta(s: JiraStatus): JiraStatusMeta {
 }
 
 export const JIRA_STATUSES: JiraStatus[] = ['WAITING', 'IN_PROGRESS', 'DONE'];
+
+export type MediaKind = 'image' | 'video' | 'audio' | 'pdf' | 'file';
+
+const EXT_KIND: Record<string, MediaKind> = {
+  jpg: 'image', jpeg: 'image', png: 'image', webp: 'image', gif: 'image', heic: 'image',
+  mp4: 'video', mov: 'video', webm: 'video', m4v: 'video', mkv: 'video',
+  mp3: 'audio', m4a: 'audio', aac: 'audio', ogg: 'audio', oga: 'audio', opus: 'audio', wav: 'audio',
+  pdf: 'pdf',
+};
+
+/** How a message attachment should be rendered, from its type and/or filename. */
+export function mediaKind(mediaType: string | null, fileName: string | null): MediaKind {
+  if (mediaType === 'photo') return 'image';
+  if (mediaType === 'video') return 'video';
+  if (mediaType === 'voice') return 'audio';
+  const ext = (fileName?.split('.').pop() || '').toLowerCase();
+  return EXT_KIND[ext] ?? 'file';
+}

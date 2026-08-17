@@ -143,8 +143,10 @@ export const api = {
     request<{ operator: Operator }>(`/api/operators/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 };
 
-export function mediaUrl(fileId: string): string {
-  return `/api/media/${encodeURIComponent(fileId)}?token=${encodeURIComponent(getToken() ?? '')}`;
+export function mediaUrl(fileId: string, name?: string): string {
+  const params = new URLSearchParams({ token: getToken() ?? '' });
+  if (name) params.set('name', name);
+  return `/api/media/${encodeURIComponent(fileId)}?${params.toString()}`;
 }
 
 export function wsUrl(): string {
