@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, User, Inbox, Clock, ArrowDownUp, PlusCircle, Tag } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Search, User, Inbox, Clock, ArrowDownUp, PlusCircle, Tag, Headphones } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Scope } from '../types';
 import { getPersona } from '../lib/personas';
@@ -40,6 +40,28 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
       className={`panel w-full shrink-0 flex-col overflow-hidden rounded-[26px] lg:w-80 xl:w-[340px] ${className}`}
     >
       <div className="border-b border-white/[0.06] p-3">
+        {/* Live operational KPIs — glanceable queue state */}
+        <div className="tile mb-3 grid grid-cols-3 divide-x divide-white/[0.06] overflow-hidden rounded-2xl">
+          <Kpi
+            icon={<Clock size={12} />}
+            label="Ждут"
+            value={store.counts.waiting}
+            tone={store.counts.waiting > 0 ? 'warn' : 'muted'}
+          />
+          <Kpi
+            icon={<Headphones size={12} />}
+            label="В работе"
+            value={store.counts.inWork}
+            tone="ok"
+          />
+          <Kpi
+            icon={<Inbox size={12} />}
+            label="Новые"
+            value={store.counts.unassigned}
+            tone={store.counts.unassigned > 0 ? 'accent' : 'muted'}
+          />
+        </div>
+
         <div className="relative">
           <Search
             size={15}
@@ -130,12 +152,15 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
             <button
               key={t.id}
               onClick={() => store.selectTicket(t.id)}
-              className={`group mb-1 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 ${
+              className={`group relative mb-1 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 ${
                 selected
                   ? 'bg-white/[0.07] ring-1 ring-inset ring-white/10'
                   : 'hover:bg-white/[0.04] active:scale-[0.99]'
               }`}
             >
+              {selected && (
+                <span className="absolute left-0 top-1/2 h-8 w-[3px] -translate-y-1/2 rounded-full bg-indigo-400" />
+              )}
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${avatarColor(
                   t.customer.id,
@@ -200,5 +225,39 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
         })}
       </div>
     </aside>
+  );
+}
+
+function Kpi({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+  tone: 'warn' | 'ok' | 'accent' | 'muted';
+}) {
+  const color = {
+    warn: 'text-amber-300',
+    ok: 'text-emerald-300',
+    accent: 'text-indigo-300',
+    muted: 'text-slate-500',
+  }[tone];
+  return (
+    <div className="flex flex-col items-center justify-center gap-1 px-1 py-2.5">
+      <span
+        className={`text-[19px] font-semibold leading-none tracking-tight tabular-nums ${
+          value > 0 ? 'text-white' : 'text-slate-600'
+        }`}
+      >
+        {value}
+      </span>
+      <span className={`label flex items-center gap-1 text-[9px] ${value > 0 ? color : 'text-slate-600'}`}>
+        {icon}
+        {label}
+      </span>
+    </div>
   );
 }

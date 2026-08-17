@@ -56,6 +56,8 @@ export interface Counts {
   unassigned: number;
   mine: number;
   open: number;
+  inWork: number;
+  waiting: number;
 }
 
 export interface Template {

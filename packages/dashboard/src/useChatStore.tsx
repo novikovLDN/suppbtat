@@ -45,7 +45,7 @@ export function useChatStore(operator: Operator) {
   const [sort, setSort] = useState<SortMode>('recent');
   const [search, setSearch] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [counts, setCounts] = useState<Counts>({ unassigned: 0, mine: 0, open: 0 });
+  const [counts, setCounts] = useState<Counts>({ unassigned: 0, mine: 0, open: 0, inWork: 0, waiting: 0 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

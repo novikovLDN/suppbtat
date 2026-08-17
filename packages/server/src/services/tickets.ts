@@ -258,10 +258,13 @@ export async function listTickets(filter: ListFilter) {
 }
 
 export async function countsByScope(operatorId: number) {
-  const [unassigned, mine, openTotal] = await Promise.all([
+  const [unassigned, mine, openTotal, inWork, waiting] = await Promise.all([
     prisma.ticket.count({ where: { status: TicketStatus.OPEN, assignedOperatorId: null } }),
     prisma.ticket.count({ where: { status: TicketStatus.OPEN, assignedOperatorId: operatorId } }),
     prisma.ticket.count({ where: { status: TicketStatus.OPEN } }),
+    prisma.ticket.count({ where: { status: TicketStatus.OPEN, assignedOperatorId: { not: null } } }),
+    // customers currently awaiting a reply (unanswered) — the SLA-critical figure
+    prisma.ticket.count({ where: { status: TicketStatus.OPEN, firstWaitingAt: { not: null } } }),
   ]);
-  return { unassigned, mine, open: openTotal };
+  return { unassigned, mine, open: openTotal, inWork, waiting };
 }
