@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, LineChart, RefreshCw, ArrowUpRight, ArrowDownRight, Minus, Clock, Timer, CheckCircle2, Inbox } from 'lucide-react';
+import { X, LineChart, RefreshCw, ArrowUpRight, ArrowDownRight, Minus, Clock, Timer, CheckCircle2, Inbox, Star } from 'lucide-react';
 import { api } from '../api';
 import type { Stats } from '../types';
 import { minutesLabel } from '../lib/format';
+import { Stars, ratingTone } from './Stars';
 
 export function AnalyticsModal({ onClose }: { onClose: () => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -113,6 +114,25 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
                 />
               </div>
 
+              {/* Quality rating */}
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div>
+                  <div className="label mb-1.5 flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <Star size={11} className="text-amber-400" fill="currentColor" strokeWidth={0} /> Оценка качества
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-2xl font-semibold tabular-nums leading-none ${ratingTone(stats.avgRating == null ? null : Math.round(stats.avgRating))}`}>
+                      {stats.avgRating == null ? '—' : stats.avgRating.toFixed(1)}
+                    </span>
+                    <Stars value={stats.avgRating == null ? 0 : Math.round(stats.avgRating)} size={15} />
+                  </div>
+                </div>
+                <div className="text-right text-[11px] text-slate-500">
+                  <div className="tabular-nums text-slate-300">{stats.ratingsCount}</div>
+                  <div className="label text-[9px]">оценок</div>
+                </div>
+              </div>
+
               {/* Created vs resolved — 14-day dynamics */}
               <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <div className="mb-3 flex items-center justify-between">
@@ -155,9 +175,14 @@ export function AnalyticsModal({ onClose }: { onClose: () => void }) {
                             style={{ width: `${(o.replies7d / max) * 100}%` }}
                           />
                         </div>
-                        <span className="w-24 shrink-0 text-right text-slate-400">
-                          <span className="tabular-nums text-slate-200">{o.replies7d}</span> ·{' '}
-                          <span className="text-slate-500">в работе {o.active}</span>
+                        <span className="flex w-28 shrink-0 items-center justify-end gap-1.5 text-right text-slate-400">
+                          {o.avgRating != null && (
+                            <span className="flex items-center gap-0.5 text-amber-300">
+                              <Star size={10} className="text-amber-400" fill="currentColor" strokeWidth={0} />
+                              {o.avgRating.toFixed(1)}
+                            </span>
+                          )}
+                          <span className="tabular-nums text-slate-200">{o.replies7d}</span>
                         </span>
                       </div>
                     );

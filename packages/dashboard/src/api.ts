@@ -1,4 +1,4 @@
-import type { Counts, JiraStatus, JiraTask, Message, Operator, Priority, Scope, SortMode, Stats, Template, Ticket } from './types';
+import type { Counts, JiraStatus, JiraTask, Message, Operator, Priority, RatingSummary, Scope, SortMode, Stats, Template, Ticket } from './types';
 
 const TOKEN_KEY = 'atlas_token';
 
@@ -98,6 +98,7 @@ export const api = {
   },
 
   getStats: () => request<Stats>('/api/stats'),
+  getRatings: () => request<{ ratings: Ticket[]; summary: RatingSummary }>('/api/ratings'),
   closeAll: () => request<{ started: number }>('/api/tickets/close-all', { method: 'POST' }),
 
   // Web Push

@@ -15,6 +15,7 @@ export type AppEvent =
   | { type: 'message:new'; ticketId: number; message: SerializedMessage }
   | { type: 'jira:new'; task: SerializedJiraTask }
   | { type: 'jira:updated'; task: SerializedJiraTask }
+  | { type: 'rating:new'; ticket: SerializedTicket }
   | { type: 'presence'; operators: PresenceInfo[] };
 
 export interface SerializedTicket {
@@ -38,6 +39,8 @@ export interface SerializedTicket {
   lastMessageAt: string;
   createdAt: string;
   closedAt: string | null;
+  rating: number | null;
+  ratedAt: string | null;
 }
 
 export interface SerializedMessage {

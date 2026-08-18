@@ -36,6 +36,8 @@ export interface Ticket {
   lastMessageAt: string;
   createdAt: string;
   closedAt: string | null;
+  rating: number | null;
+  ratedAt: string | null;
 }
 
 export interface Message {
@@ -78,8 +80,23 @@ export interface Stats {
   today: { created: number; closed: number };
   avgFirstResponseMin: number | null;
   avgResolutionMin: number | null;
+  avgRating: number | null;
+  ratingsCount: number;
   perDay: { date: string; created: number; closed: number }[];
-  operators: { id: number; name: string; active: number; replies7d: number }[];
+  operators: {
+    id: number;
+    name: string;
+    active: number;
+    replies7d: number;
+    avgRating: number | null;
+    ratings: number;
+  }[];
+}
+
+export interface RatingSummary {
+  count: number;
+  avg: number | null;
+  distribution: number[]; // index 0..4 → 1..5 stars
 }
 
 export type Scope = 'all' | 'unassigned' | 'mine' | 'closed';
@@ -111,4 +128,5 @@ export type WsEvent =
   | { type: 'ticket:updated'; ticket: Ticket }
   | { type: 'message:new'; ticketId: number; message: Message }
   | { type: 'jira:new'; task: JiraTask }
-  | { type: 'jira:updated'; task: JiraTask };
+  | { type: 'jira:updated'; task: JiraTask }
+  | { type: 'rating:new'; ticket: Ticket };

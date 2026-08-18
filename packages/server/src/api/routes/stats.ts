@@ -50,13 +50,20 @@ export async function statsRoutes(app: FastifyInstance) {
       SELECT o.id, o."displayName" AS name,
         (SELECT count(*)::int FROM "Ticket" t WHERE t."assignedOperatorId" = o.id AND t.status = 'OPEN') AS active,
         (SELECT count(*)::int FROM "Message" m WHERE m."operatorId" = o.id AND m.sender = 'OPERATOR'
-           AND m.internal = false AND m."createdAt" >= now() - interval '7 days') AS replies7d
+           AND m.internal = false AND m."createdAt" >= now() - interval '7 days') AS replies7d,
+        (SELECT avg(t.rating) FROM "Ticket" t WHERE t."assignedOperatorId" = o.id AND t.rating IS NOT NULL) AS avg_rating,
+        (SELECT count(*)::int FROM "Ticket" t WHERE t."assignedOperatorId" = o.id AND t.rating IS NOT NULL) AS ratings
       FROM "Operator" o
       WHERE o."isActive" = true
       ORDER BY replies7d DESC, active DESC
-    `)) as Array<{ id: number; name: string; active: number; replies7d: number }>;
+    `)) as Array<{ id: number; name: string; active: number; replies7d: number; avg_rating: number | null; ratings: number }>;
+
+    const ratingAgg = (await prisma.$queryRawUnsafe(`
+      SELECT avg(rating) AS avg, count(*)::int AS cnt FROM "Ticket" WHERE rating IS NOT NULL
+    `)) as Array<{ avg: number | null; cnt: number }>;
 
     const num = (v: number | null | undefined) => (v == null ? null : Math.round(Number(v)));
+    const num1 = (v: number | null | undefined) => (v == null ? null : Math.round(Number(v) * 10) / 10);
 
     return {
       open,
@@ -66,6 +73,8 @@ export async function statsRoutes(app: FastifyInstance) {
       today: { created: createdToday, closed: closedToday },
       avgFirstResponseMin: num(avgFirst[0]?.m),
       avgResolutionMin: num(avgRes[0]?.m),
+      avgRating: num1(ratingAgg[0]?.avg),
+      ratingsCount: Number(ratingAgg[0]?.cnt ?? 0),
       perDay: perDay.map((r) => ({
         date: r.date,
         created: Number(r.created),
@@ -76,6 +85,8 @@ export async function statsRoutes(app: FastifyInstance) {
         name: o.name,
         active: Number(o.active),
         replies7d: Number(o.replies7d),
+        avgRating: num1(o.avg_rating),
+        ratings: Number(o.ratings),
       })),
     };
   });

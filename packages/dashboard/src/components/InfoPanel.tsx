@@ -19,6 +19,7 @@ import {
   Film,
   Music,
   Download,
+  Star,
 } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Message, Operator, Priority, Ticket } from '../types';
@@ -35,6 +36,7 @@ import {
   statusBadge,
 } from '../lib/format';
 import { Lightbox, type ViewerKind } from './Lightbox';
+import { Stars, ratingTone } from './Stars';
 
 interface Props {
   store: ChatStore;
@@ -158,6 +160,22 @@ function Body({
         <Row label="Имя для клиента" value={t.assignedName || '—'} />
         {t.closedAt && <Row label="Закрыт" value={dateTime(t.closedAt)} />}
       </div>
+
+      {/* Quality rating */}
+      {t.rating != null && (
+        <div className="border-b border-white/[0.06] p-4">
+          <div className="label mb-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+            <Star size={11} className="text-amber-400" fill="currentColor" strokeWidth={0} /> Оценка качества
+          </div>
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-white/[0.03] px-3 py-2.5">
+            <Stars value={t.rating} size={18} />
+            <span className={`text-lg font-semibold tabular-nums ${ratingTone(t.rating)}`}>{t.rating}/5</span>
+          </div>
+          {t.ratedAt && (
+            <p className="mt-1.5 text-center text-[10px] text-slate-500">Оценено {dateTime(t.ratedAt)}</p>
+          )}
+        </div>
+      )}
 
       {/* Transfer */}
       {open && assigned && operators.length > 1 && (

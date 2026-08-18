@@ -16,6 +16,7 @@ import {
   Archive,
   Sun,
   Moon,
+  Star,
 } from 'lucide-react';
 import { getTheme, setTheme, type Theme } from '../lib/theme';
 import { useAuth } from '../store';
@@ -30,6 +31,7 @@ import { AdminPanel } from './AdminPanel';
 import { SettingsModal } from './SettingsModal';
 import { AnalyticsModal } from './AnalyticsModal';
 import { JiraBoard } from './JiraBoard';
+import { RatingsBoard } from './RatingsBoard';
 import { CommandPalette, type Command } from './CommandPalette';
 
 export function Dashboard() {
@@ -39,6 +41,7 @@ export function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [jiraOpen, setJiraOpen] = useState(false);
+  const [ratingsOpen, setRatingsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [persona, setPersonaState] = useState(getPersona());
@@ -110,6 +113,7 @@ export function Dashboard() {
       },
       { id: 'jira', label: 'Открыть доску Jira', icon: <SquareKanban size={15} />, keywords: 'задачи board', run: () => setJiraOpen(true) },
       { id: 'analytics', label: 'Открыть обзор и метрики', icon: <BarChart3 size={15} />, keywords: 'аналитика stats метрики', run: () => setAnalyticsOpen(true) },
+      { id: 'ratings', label: 'Оценки качества', icon: <Star size={15} />, keywords: 'оценки рейтинг звёзды quality', run: () => setRatingsOpen(true) },
       { id: 'settings', label: 'Настройки', icon: <Settings size={15} />, keywords: 'settings уведомления звук', run: () => setSettingsOpen(true) },
       { id: 'scope-all', label: 'Все тикеты', icon: <LayoutList size={15} />, keywords: 'вкладка все open', run: () => setScope('all') },
       { id: 'scope-unassigned', label: 'Новые (не взятые)', icon: <Inbox size={15} />, keywords: 'вкладка новые unassigned', run: () => setScope('unassigned') },
@@ -184,6 +188,14 @@ export function Dashboard() {
                 {jiraActive}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setRatingsOpen(true)}
+            className="tile tile-hover flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition active:scale-95 sm:h-9 sm:w-9"
+            title="Оценки качества"
+          >
+            <Star size={17} />
           </button>
 
           <button
@@ -288,6 +300,13 @@ export function Dashboard() {
         <JiraBoard
           store={store}
           onClose={() => setJiraOpen(false)}
+          onOpenChat={(ticketId) => selectTicket(ticketId).catch(() => {})}
+        />
+      )}
+      {ratingsOpen && (
+        <RatingsBoard
+          store={store}
+          onClose={() => setRatingsOpen(false)}
           onOpenChat={(ticketId) => selectTicket(ticketId).catch(() => {})}
         />
       )}

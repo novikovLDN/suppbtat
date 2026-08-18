@@ -33,6 +33,8 @@ export function serializeTicket(t: TicketWithRelations): SerializedTicket {
     lastMessageAt: t.lastMessageAt.toISOString(),
     createdAt: t.createdAt.toISOString(),
     closedAt: t.closedAt ? t.closedAt.toISOString() : null,
+    rating: t.rating ?? null,
+    ratedAt: t.ratedAt ? t.ratedAt.toISOString() : null,
   };
 }
 

@@ -12,7 +12,10 @@ import {
   createTicket,
   listCustomerTickets,
   closeTicket,
+  getTicketById,
+  setTicketRating,
 } from '../services/tickets.js';
+import { sendRatingRequest, starsText } from '../services/ratings.js';
 import { addCustomerMessage, addSystemMessage, type IncomingMedia } from '../services/messages.js';
 import { pushToAllOperators } from '../services/push.js';
 import { ticketNumber } from '../services/serializers.js';
@@ -149,6 +152,33 @@ bot.callbackQuery('close_ticket', async (ctx) => {
   await closeTicket(ticket.id);
   await addSystemMessage(ticket.id, 'Тикет закрыт пользователем.');
   await ctx.reply(t.ticketClosedByUser(ticket.id), { ...HTML, reply_markup: faqHomeKeyboard() });
+  await sendRatingRequest(ticket.id);
+});
+
+/* ─── Quality rating (post-close stars) ────────────────────── */
+
+bot.callbackQuery(/^rate:(\d+):([1-5])$/, async (ctx) => {
+  const ticketId = Number(ctx.match![1]);
+  const stars = Number(ctx.match![2]);
+  const ticket = await getTicketById(ticketId);
+
+  if (!ticket) {
+    await ctx.answerCallbackQuery();
+    await ctx.deleteMessage().catch(() => {});
+    return;
+  }
+  if (ticket.rating != null) {
+    await ctx.answerCallbackQuery({ text: 'Вы уже оценили этот диалог. Спасибо!' });
+    await ctx.deleteMessage().catch(() => {});
+    return;
+  }
+
+  await setTicketRating(ticketId, stars);
+  await addSystemMessage(ticketId, `Клиент оценил работу: ${starsText(stars)} (${stars}/5).`);
+  await ctx.answerCallbackQuery({ text: `Спасибо! Ваша оценка: ${stars}/5` });
+  // Replace the prompt with a thank-you note.
+  await ctx.deleteMessage().catch(() => {});
+  await ctx.reply(t.rateThanks(stars), HTML).catch(() => {});
 });
 
 /* ─── "My tickets" view ────────────────────────────────────── */

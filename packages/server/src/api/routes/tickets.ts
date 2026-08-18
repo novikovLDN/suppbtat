@@ -17,7 +17,9 @@ import {
   setClaimNotified,
   listCustomerTickets,
   countsByScope,
+  listRatedTickets,
 } from '../../services/tickets.js';
+import { sendRatingRequest } from '../../services/ratings.js';
 import { listMessages, addOperatorMessage, addSystemMessage, notifyCustomer } from '../../services/messages.js';
 import { serializeTicket } from '../../services/serializers.js';
 import { t } from '../../bot/texts.js';
@@ -73,6 +75,7 @@ async function closeAllOpen(operatorName: string) {
             await closeTicket(id);
             await addSystemMessage(id, `Массовое закрытие: ${operatorName}.`);
             await notifyCustomer(id, t.ticketClosedByOperator(id));
+            await sendRatingRequest(id);
           } catch (e) {
             logger.warn(`close-all: failed on #${id}`, e);
           }
@@ -96,6 +99,16 @@ export async function ticketRoutes(app: FastifyInstance) {
     const ids = await openTicketIds();
     void closeAllOpen(req.operator!.name);
     return { started: ids.length };
+  });
+
+  // All customer quality ratings (newest first) + a small summary.
+  app.get('/api/ratings', async () => {
+    const ratings = await listRatedTickets(300);
+    const count = ratings.length;
+    const sum = ratings.reduce((a, r) => a + (r.rating ?? 0), 0);
+    const avg = count ? sum / count : null;
+    const distribution = [1, 2, 3, 4, 5].map((s) => ratings.filter((r) => r.rating === s).length);
+    return { ratings, summary: { count, avg, distribution } };
   });
 
   app.get('/api/tickets', async (req) => {
@@ -195,6 +208,7 @@ export async function ticketRoutes(app: FastifyInstance) {
     const updated = await closeTicket(id);
     await addSystemMessage(id, `Тикет закрыт оператором ${req.operator!.name}.`);
     await notifyCustomer(id, t.ticketClosedByOperator(id)).catch(() => {});
+    void sendRatingRequest(id);
     return { ticket: serializeTicket(updated) };
   });
 

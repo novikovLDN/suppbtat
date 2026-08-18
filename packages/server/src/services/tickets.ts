@@ -178,6 +178,30 @@ export async function markTicketSupplemented(ticketId: number) {
   return ticket;
 }
 
+/** Record the customer's post-close quality rating (1..5). */
+export async function setTicketRating(ticketId: number, stars: number) {
+  const ticket = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { rating: stars, ratedAt: new Date() },
+    include: ticketInclude,
+  });
+  const serialized = serializeTicket(ticket);
+  bus.publish({ type: 'ticket:updated', ticket: serialized });
+  bus.publish({ type: 'rating:new', ticket: serialized });
+  return ticket;
+}
+
+/** Every rated ticket, newest rating first — for the ratings dashboard. */
+export async function listRatedTickets(limit = 200) {
+  const tickets = await prisma.ticket.findMany({
+    where: { rating: { not: null } },
+    orderBy: { ratedAt: 'desc' },
+    take: limit,
+    include: ticketInclude,
+  });
+  return tickets.map(serializeTicket);
+}
+
 export async function markTicketRead(ticketId: number) {
   const ticket = await prisma.ticket.update({
     where: { id: ticketId },

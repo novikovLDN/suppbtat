@@ -54,6 +54,7 @@ export function useChatStore(operator: Operator) {
   const [loadingList, setLoadingList] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [jiraTasks, setJiraTasks] = useState<JiraTask[]>([]);
+  const [ratings, setRatings] = useState<Ticket[]>([]);
 
   const selectedIdRef = useRef<number | null>(null);
   selectedIdRef.current = selectedId;
@@ -79,6 +80,20 @@ export function useChatStore(operator: Operator) {
     setJiraTasks((prev) => {
       const without = prev.filter((x) => x.id !== task.id);
       return [task, ...without].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    });
+  }, []);
+
+  // load quality ratings once
+  useEffect(() => {
+    api.getRatings().then((r) => setRatings(r.ratings)).catch(() => {});
+  }, []);
+
+  const upsertRating = useCallback((ticket: Ticket) => {
+    setRatings((prev) => {
+      const without = prev.filter((x) => x.id !== ticket.id);
+      return [ticket, ...without].sort(
+        (a, b) => +new Date(b.ratedAt ?? 0) - +new Date(a.ratedAt ?? 0),
+      );
     });
   }, []);
 
@@ -155,6 +170,8 @@ export function useChatStore(operator: Operator) {
           }
         } else if (data.type === 'jira:new' || data.type === 'jira:updated') {
           upsertJira(data.task);
+        } else if (data.type === 'rating:new') {
+          upsertRating(data.ticket);
         }
       };
     };
@@ -164,7 +181,7 @@ export function useChatStore(operator: Operator) {
       if (retry) clearTimeout(retry);
       ws?.close();
     };
-  }, [upsertLocal, scheduleReconcile, upsertJira]);
+  }, [upsertLocal, scheduleReconcile, upsertJira, upsertRating]);
 
   const selectTicket = useCallback(async (id: number) => {
     setSelectedId(id);
@@ -284,6 +301,7 @@ export function useChatStore(operator: Operator) {
     loadingList,
     now,
     jiraTasks,
+    ratings,
     selectTicket,
     deselect,
     sendMessage,

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Search, User, Inbox, Clock, ArrowDownUp, PlusCircle, Tag, Headphones } from 'lucide-react';
+import { Search, User, Inbox, Clock, ArrowDownUp, PlusCircle, Tag, Headphones, Star } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Scope } from '../types';
 import { getPersona } from '../lib/personas';
@@ -193,6 +193,12 @@ export function TicketList({ store, className = '' }: { store: ChatStore; classN
                     <span className={`h-1 w-1 rounded-full ${badge.dot}`} />
                     {badge.label}
                   </span>
+                  {t.rating != null && (
+                    <span className="flex items-center gap-0.5 rounded-full bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300 ring-1 ring-inset ring-amber-400/20">
+                      <Star size={9} className="text-amber-400" fill="currentColor" strokeWidth={0} />
+                      {t.rating}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <span className="truncate text-xs text-slate-400">{t.subject || 'Без темы'}</span>

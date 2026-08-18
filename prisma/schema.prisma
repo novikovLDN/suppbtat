@@ -72,6 +72,10 @@ model Ticket {
   assignedName  String?
   claimNotified Boolean @default(false)
 
+  // post-close quality rating from the customer (1..5 stars)
+  rating  Int?
+  ratedAt DateTime?
+
   // smart queue
   priority       Priority  @default(NORMAL)
   tags           String[]  @default([])
@@ -86,6 +90,7 @@ model Ticket {
   @@index([status, assignedOperatorId, lastMessageAt])
   @@index([assignedOperatorId, status])
   @@index([lastMessageAt])
+  @@index([ratedAt])
 }
 
 enum TicketStatus {
