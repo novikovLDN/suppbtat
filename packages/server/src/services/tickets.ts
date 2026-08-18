@@ -161,7 +161,15 @@ export async function closeTicket(ticketId: number) {
 export async function reopenTicket(ticketId: number) {
   const ticket = await prisma.ticket.update({
     where: { id: ticketId },
-    data: { status: TicketStatus.OPEN, closedAt: null, lastMessageAt: new Date() },
+    // Reset the rating so a reopened ticket asks for a fresh rating when closed
+    // again — a repeat interaction is rated on its own merits.
+    data: {
+      status: TicketStatus.OPEN,
+      closedAt: null,
+      lastMessageAt: new Date(),
+      rating: null,
+      ratedAt: null,
+    },
     include: ticketInclude,
   });
   bus.publish({ type: 'ticket:updated', ticket: serializeTicket(ticket) });

@@ -17,15 +17,15 @@ export function starsText(stars: number): string {
 }
 
 /**
- * Ask the customer to rate the specialist after a ticket is closed. Best-effort:
- * only sent when an operator actually took the ticket into work and it isn't
- * already rated.
+ * Ask the customer to rate the specialist after a ticket is closed. Best-effort;
+ * sent on every close (repeat contacts included) unless this ticket already
+ * carries a rating. Reopening a ticket clears its rating, so the next close
+ * asks again.
  */
 export async function sendRatingRequest(ticketId: number) {
   const ticket = await getTicketById(ticketId);
   if (!ticket) return;
-  if (ticket.rating != null) return; // already rated
-  if (!ticket.claimNotified && ticket.assignedOperatorId == null) return; // nobody handled it
+  if (ticket.rating != null) return; // this ticket already carries a rating
 
   try {
     await bot.api.sendMessage(ticket.customer.id.toString(), t.ratePrompt, {
