@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react';
 import { Search, User, Inbox, Clock, ArrowDownUp, PlusCircle, Tag, Headphones, Star } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Scope } from '../types';
-import { getPersona } from '../lib/personas';
 import {
   avatarColor,
   customerName,
@@ -20,14 +19,22 @@ const SCOPES: { key: Scope; label: string; countKey?: 'unassigned' | 'mine' | 'o
   { key: 'closed', label: 'Закрытые' },
 ];
 
-export function TicketList({ store, className = '' }: { store: ChatStore; className?: string }) {
+export function TicketList({
+  store,
+  onClaimNext,
+  className = '',
+}: {
+  store: ChatStore;
+  onClaimNext: () => void | Promise<void>;
+  className?: string;
+}) {
   const [claiming, setClaiming] = useState(false);
 
   const claimNext = async () => {
     if (claiming) return;
     setClaiming(true);
     try {
-      await store.claimNext(getPersona() || undefined);
+      await onClaimNext();
     } catch {
       /* queue empty — ignore */
     } finally {

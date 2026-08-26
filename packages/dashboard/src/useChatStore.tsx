@@ -237,6 +237,18 @@ export function useChatStore(operator: Operator) {
     [upsertLocal, selectTicket],
   );
 
+  // Select the longest-waiting unassigned ticket without claiming it (the UI
+  // then opens the "take into work" picker). Returns the ticket, or null.
+  const peekNextUnassigned = useCallback(async () => {
+    try {
+      const r = await api.nextUnassigned();
+      await selectTicket(r.ticket.id);
+      return r.ticket;
+    } catch {
+      return null;
+    }
+  }, [selectTicket]);
+
   const transfer = useCallback(
     async (operatorId: number) => {
       if (!selectedIdRef.current) return;
@@ -308,6 +320,7 @@ export function useChatStore(operator: Operator) {
     refreshList,
     claim,
     claimNext,
+    peekNextUnassigned,
     transfer,
     setMeta,
     createJira,

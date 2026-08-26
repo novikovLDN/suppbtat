@@ -32,6 +32,7 @@ import { SettingsModal } from './SettingsModal';
 import { AnalyticsModal } from './AnalyticsModal';
 import { JiraBoard } from './JiraBoard';
 import { RatingsBoard } from './RatingsBoard';
+import { ClaimFlow } from './ClaimFlow';
 import { CommandPalette, type Command } from './CommandPalette';
 
 export function Dashboard() {
@@ -42,6 +43,7 @@ export function Dashboard() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [jiraOpen, setJiraOpen] = useState(false);
   const [ratingsOpen, setRatingsOpen] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [persona, setPersonaState] = useState(getPersona());
@@ -66,6 +68,13 @@ export function Dashboard() {
   const hasSelection = store.selectedId !== null;
   const { selectTicket } = store;
   const jiraActive = store.jiraTasks.filter((j) => j.status !== 'DONE').length;
+
+  // "Взять следующий": select the longest-waiting unassigned ticket, then open
+  // the role/name picker on it.
+  const openClaimNext = async () => {
+    const t = await store.peekNextUnassigned();
+    if (t) setClaimOpen(true);
+  };
 
   // Open a ticket from a push-notification tap (?ticket= or SW message).
   useEffect(() => {
@@ -254,7 +263,11 @@ export function Dashboard() {
 
       {/* Body — floating panels with gaps */}
       <div className="relative flex min-h-0 flex-1 gap-2 sm:gap-3">
-        <TicketList store={store} className={hasSelection ? 'hidden lg:flex' : 'flex'} />
+        <TicketList
+          store={store}
+          onClaimNext={openClaimNext}
+          className={hasSelection ? 'hidden lg:flex' : 'flex'}
+        />
         <ChatPanel
           store={store}
           operatorId={operator!.id}
@@ -262,6 +275,7 @@ export function Dashboard() {
           className={hasSelection ? 'flex' : 'hidden lg:flex'}
           onBack={store.deselect}
           onToggleInfo={() => setInfoOpen(true)}
+          onClaim={() => setClaimOpen(true)}
         />
 
         {/* Info: static column on xl, slide-over drawer below xl */}
@@ -271,6 +285,7 @@ export function Dashboard() {
           operators={operators}
           variant="column"
           onOpenBoard={() => setJiraOpen(true)}
+          onClaim={() => setClaimOpen(true)}
         />
         {infoOpen && hasSelection && (
           <InfoPanel
@@ -283,6 +298,7 @@ export function Dashboard() {
               setInfoOpen(false);
               setJiraOpen(true);
             }}
+            onClaim={() => setClaimOpen(true)}
           />
         )}
       </div>
@@ -308,6 +324,13 @@ export function Dashboard() {
           store={store}
           onClose={() => setRatingsOpen(false)}
           onOpenChat={(ticketId) => selectTicket(ticketId).catch(() => {})}
+        />
+      )}
+      {claimOpen && store.selected && (
+        <ClaimFlow
+          ticket={store.selected}
+          onConfirm={(p) => store.claim(p)}
+          onClose={() => setClaimOpen(false)}
         />
       )}
       {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}

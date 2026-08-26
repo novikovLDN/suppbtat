@@ -155,6 +155,14 @@ export async function ticketRoutes(app: FastifyInstance) {
     return { ticket: serializeTicket(updated) };
   });
 
+  // Peek the longest-waiting unassigned ticket (without claiming it) so the UI
+  // can open the "take into work" picker on it.
+  app.get('/api/tickets/next-unassigned', async (_req, reply) => {
+    const ticket = await nextUnassignedTicket();
+    if (!ticket) return reply.code(404).send({ error: 'Очередь пуста' });
+    return { ticket: serializeTicket(ticket) };
+  });
+
   // Take the single longest-waiting unassigned ticket.
   app.post('/api/tickets/claim-next', async (req, reply) => {
     const ticket = await nextUnassignedTicket();

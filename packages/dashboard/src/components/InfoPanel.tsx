@@ -45,15 +45,16 @@ interface Props {
   operators: Operator[];
   onClose?: () => void;
   onOpenBoard?: () => void;
+  onClaim?: () => void;
 }
 
-export function InfoPanel({ store, variant, persona, operators, onClose, onOpenBoard }: Props) {
+export function InfoPanel({ store, variant, persona, operators, onClose, onOpenBoard, onClaim }: Props) {
   const t = store.selected;
 
   if (variant === 'column') {
     return (
       <aside className="panel hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-[26px] xl:flex">
-        {t ? <Body store={store} persona={persona} operators={operators} onOpenBoard={onOpenBoard} /> : null}
+        {t ? <Body store={store} persona={persona} operators={operators} onOpenBoard={onOpenBoard} onClaim={onClaim} /> : null}
       </aside>
     );
   }
@@ -72,7 +73,7 @@ export function InfoPanel({ store, variant, persona, operators, onClose, onOpenB
         >
           <X size={16} />
         </button>
-        {t ? <Body store={store} persona={persona} operators={operators} onOpenBoard={onOpenBoard} /> : null}
+        {t ? <Body store={store} persona={persona} operators={operators} onOpenBoard={onOpenBoard} onClaim={onClaim} /> : null}
       </aside>
     </div>
   );
@@ -83,11 +84,13 @@ function Body({
   persona,
   operators,
   onOpenBoard,
+  onClaim,
 }: {
   store: ChatStore;
   persona: string;
   operators: Operator[];
   onOpenBoard?: () => void;
+  onClaim?: () => void;
 }) {
   const t = store.selected!;
   const badge = statusBadge(t);
@@ -204,14 +207,13 @@ function Body({
         {open && !assigned && (
           <>
             <button
-              onClick={() => store.claim(persona || undefined)}
+              onClick={() => onClaim?.()}
               className="accent flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
             >
               <UserCheck size={17} /> Взять в работу
             </button>
             <p className="text-center text-[11px] text-slate-500">
-              Клиент увидит:{' '}
-              <span className="font-medium text-indigo-300">{persona || 'случайное имя'}</span>
+              Выберите роль и имя специалиста для клиента.
             </p>
           </>
         )}

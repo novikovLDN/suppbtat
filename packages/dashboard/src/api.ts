@@ -78,6 +78,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(name ? { name } : {}),
     }),
+  nextUnassigned: () => request<{ ticket: Ticket }>(`/api/tickets/next-unassigned`),
   transfer: (id: number, operatorId: number) =>
     request<{ ticket: Ticket }>(`/api/tickets/${id}/transfer`, {
       method: 'POST',

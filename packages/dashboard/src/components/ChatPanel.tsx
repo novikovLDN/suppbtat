@@ -11,6 +11,7 @@ import {
   FileText,
   X,
   StickyNote,
+  UserCheck,
 } from 'lucide-react';
 import type { ChatStore } from '../useChatStore';
 import type { Message, Template, Ticket } from '../types';
@@ -32,6 +33,7 @@ interface Props {
   className?: string;
   onBack?: () => void;
   onToggleInfo?: () => void;
+  onClaim?: () => void;
 }
 
 export function applyVars(text: string, ticket: Ticket | null): string {
@@ -43,7 +45,7 @@ export function applyVars(text: string, ticket: Ticket | null): string {
     .replace(/\{username\}/gi, ticket.customer.username ? `@${ticket.customer.username}` : '');
 }
 
-export function ChatPanel({ store, operatorId, persona, className = '', onBack, onToggleInfo }: Props) {
+export function ChatPanel({ store, operatorId, persona, className = '', onBack, onToggleInfo, onClaim }: Props) {
   const { selected, messages } = store;
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevIdRef = useRef<number | undefined>(undefined);
@@ -134,7 +136,13 @@ export function ChatPanel({ store, operatorId, persona, className = '', onBack, 
         ))}
       </div>
 
-      <Composer store={store} disabled={closed} />
+      {closed ? (
+        <Composer store={store} disabled />
+      ) : selected.assignedOperatorId === null ? (
+        <ClaimBar onClaim={() => onClaim?.()} />
+      ) : (
+        <Composer store={store} disabled={false} />
+      )}
 
       {viewer && (
         <Lightbox url={viewer.url} kind={viewer.kind} name={viewer.name} onClose={() => setViewer(null)} />
@@ -297,6 +305,22 @@ function mediaLabel(type: string): string {
     default:
       return 'Вложение';
   }
+}
+
+function ClaimBar({ onClaim }: { onClaim: () => void }) {
+  return (
+    <div className="shrink-0 border-t border-white/[0.06] p-3 sm:p-4">
+      <button
+        onClick={onClaim}
+        className="accent flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+      >
+        <UserCheck size={18} /> Взять чат в работу
+      </button>
+      <p className="mt-2 text-center text-[11px] text-slate-500">
+        Возьмите чат в работу, чтобы начать переписку с клиентом.
+      </p>
+    </div>
+  );
 }
 
 function Composer({ store, disabled }: { store: ChatStore; disabled: boolean }) {
