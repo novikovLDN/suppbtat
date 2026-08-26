@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, UserCheck, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import type { Ticket } from '../types';
-import { OPERATOR_ROLES, OPERATOR_NAMES, composePersona } from '../lib/personas';
+import { OPERATOR_ROLES, namesForRole, composePersona } from '../lib/personas';
 import { customerName } from '../lib/format';
 
 interface Props {
@@ -74,7 +74,14 @@ export function ClaimFlow({ ticket, onConfirm, onClose }: Props) {
               <div className="label mb-2 text-[10px] text-slate-500">Шаг 1 · Выберите роль</div>
               <div className="grid grid-cols-2 gap-2">
                 {OPERATOR_ROLES.map((r) => (
-                  <Chip key={r} active={role === r} onClick={() => setRole(r)}>
+                  <Chip
+                    key={r}
+                    active={role === r}
+                    onClick={() => {
+                      if (r !== role) setName(null); // names differ per role
+                      setRole(r);
+                    }}
+                  >
                     {r}
                   </Chip>
                 ))}
@@ -82,9 +89,11 @@ export function ClaimFlow({ ticket, onConfirm, onClose }: Props) {
             </>
           ) : (
             <>
-              <div className="label mb-2 text-[10px] text-slate-500">Шаг 2 · Выберите имя</div>
+              <div className="label mb-2 text-[10px] text-slate-500">
+                Шаг 2 · Выберите имя{role ? ` · ${role}` : ''}
+              </div>
               <div className="grid grid-cols-3 gap-2">
-                {OPERATOR_NAMES.map((n) => (
+                {namesForRole(role ?? '').map((n) => (
                   <Chip key={n} active={name === n} onClick={() => setName(n)}>
                     {n}
                   </Chip>

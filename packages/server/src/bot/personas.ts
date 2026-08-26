@@ -1,77 +1,60 @@
 /**
- * Customer-facing operator identities. The real operator/admin stays anonymous
- * to the user — when a chat is taken into work we show a "role + name" persona
- * (e.g. «Ведущий разработчик Михаил») instead.
+ * Customer-facing operator identities. Each role owns a distinct set of first
+ * names (no overlap) so a given persona is always consistent — «Разработчик
+ * Кирилл» is always a developer and «Кирилл» never shows up under another role.
  *
- * Keep OPERATOR_ROLES / OPERATOR_NAMES in sync with the dashboard copy in
- * packages/dashboard/src/lib/personas.ts.
+ * Keep this roster in sync with packages/dashboard/src/lib/personas.ts.
  */
 
-export const OPERATOR_ROLES = [
-  'Специалист поддержки',
-  'Старший специалист',
-  'Ведущий специалист',
-  'Разработчик',
-  'Ведущий разработчик',
-  'Инженер',
-  'Ведущий инженер',
-  'Старший инженер',
-  'Инженер поддержки',
-  'Сетевой инженер',
-  'Специалист по безопасности',
-  'Ведущий специалист по безопасности',
-  'Руководитель поддержки',
-  'Руководитель отдела разработки',
-  'Технический директор',
+export interface RoleTeam {
+  role: string;
+  names: string[];
+}
+
+export const OPERATOR_TEAM: RoleTeam[] = [
+  { role: 'Специалист поддержки', names: ['Николай', 'Ольга', 'Артём', 'Полина'] },
+  { role: 'Старший специалист', names: ['Виктория', 'Григорий', 'Тимур'] },
+  { role: 'Ведущий специалист', names: ['Марина', 'Станислав', 'Валерия'] },
+  { role: 'Разработчик', names: ['Кирилл', 'Денис', 'Егор', 'Ирина'] },
+  { role: 'Ведущий разработчик', names: ['Михаил', 'Андрей', 'Павел'] },
+  { role: 'Инженер', names: ['Роман', 'Антон', 'Глеб'] },
+  { role: 'Ведущий инженер', names: ['Владислав', 'Юрий', 'Оксана'] },
+  { role: 'Старший инженер', names: ['Владимир', 'Сергей', 'Илья'] },
+  { role: 'Инженер поддержки', names: ['Максим', 'Даниил', 'Алина'] },
+  { role: 'Сетевой инженер', names: ['Тарас', 'Борис', 'Руслан'] },
+  { role: 'Специалист по безопасности', names: ['Виталий', 'Захар', 'Марк'] },
+  { role: 'Ведущий специалист по безопасности', names: ['Леонид', 'Игорь', 'Арсений'] },
+  { role: 'Руководитель поддержки', names: ['Алексей', 'Екатерина', 'Дмитрий'] },
+  { role: 'Руководитель отдела разработки', names: ['Александр', 'Константин', 'Вячеслав'] },
+  { role: 'Технический директор', names: ['Эдуард', 'Геннадий', 'Виктор'] },
 ];
 
-export const OPERATOR_NAMES = [
-  'Александр',
-  'Мария',
-  'Иван',
-  'Максим',
-  'Анна',
-  'Дмитрий',
-  'Ольга',
-  'Павел',
-  'Николай',
-  'Сергей',
-  'Владимир',
-  'Роман',
-  'Михаил',
-  'Екатерина',
-  'Алексей',
-  'Артём',
-];
+export const OPERATOR_ROLES = OPERATOR_TEAM.map((t) => t.role);
 
-/** Preset personas used for the random fallback. */
-export const OPERATOR_PERSONAS = [
-  'Специалист поддержки Ольга',
-  'Старший специалист Артём',
-  'Ведущий специалист Николай',
-  'Ведущий разработчик Михаил',
-  'Инженер поддержки Сергей',
-  'Старший инженер Владимир',
-  'Сетевой инженер Роман',
-  'Руководитель поддержки Алексей',
-];
+export function namesForRole(role: string): string[] {
+  return OPERATOR_TEAM.find((t) => t.role === role)?.names ?? [];
+}
 
 export function composePersona(role: string, name: string): string {
   return `${role} ${name}`.replace(/\s+/g, ' ').trim();
 }
 
+/** Preset personas (one per role) for the Settings default-name picker. */
+export const OPERATOR_PERSONAS = OPERATOR_TEAM.map((t) => composePersona(t.role, t.names[0]));
+
 export function randomPersona(): string {
-  return OPERATOR_PERSONAS[Math.floor(Math.random() * OPERATOR_PERSONAS.length)];
+  const team = OPERATOR_TEAM[Math.floor(Math.random() * OPERATOR_TEAM.length)];
+  const name = team.names[Math.floor(Math.random() * team.names.length)];
+  return composePersona(team.role, name);
 }
 
-/** Accept a preset persona, or any "role + name" built from the known lists. */
+/** Accept only a valid "role + name" where the name belongs to that role. */
 export function isValidPersona(name: string): boolean {
   const v = (name || '').trim();
   if (!v) return false;
-  if (OPERATOR_PERSONAS.includes(v)) return true;
   const idx = v.lastIndexOf(' ');
   if (idx < 0) return false;
   const role = v.slice(0, idx).trim();
   const first = v.slice(idx + 1).trim();
-  return OPERATOR_ROLES.includes(role) && OPERATOR_NAMES.includes(first);
+  return namesForRole(role).includes(first);
 }
